@@ -37,10 +37,17 @@ Works with **any** Android TV or Google TV brand (Sony, TCL, Xiaomi, Chromecast 
 ### Step 2: Connect from your Computer (One-time)
 Make sure your computer and your TV are connected to the **same Wi-Fi or home network**.
 
-Open Terminal on your computer, navigate to this folder, and run:
-```bash
-./switch.sh status 192.168.1.50
-```
+Open your terminal on your computer (**PowerShell** on Windows, or **Terminal** on Mac/Linux), navigate to this folder, and run:
+
+* **On Windows (PowerShell or CMD):**
+  ```powershell
+  .\switch.ps1 status 192.168.1.50
+  # Or simply: switch status 192.168.1.50
+  ```
+* **On Mac / Linux:**
+  ```bash
+  ./switch.sh status 192.168.1.50
+  ```
 *(Replace `192.168.1.50` with your actual TV IP address).*
 
 > 💡 **Look at your TV screen!**  
@@ -50,8 +57,21 @@ Open Terminal on your computer, navigate to this folder, and run:
 ---
 
 ### Step 3: Choose your Home Screen!
-Whenever you want to switch your TV, just run the command you want:
+Whenever you want to switch your TV, run the command for your system:
 
+#### 💻 Windows (PowerShell or Command Prompt)
+```powershell
+# 🍏 Switch to clean Apple TV-style grid (no ads, super fast):
+.\switch.ps1 fresh
+
+# 🕌 Switch to clean grid + Live Prayer Times, Weather & Air Quality:
+.\switch.ps1 widgets
+
+# 📺 Revert back to your TV's original factory home screen anytime:
+.\switch.ps1 default
+```
+
+#### 🍎 Mac / Linux (Terminal)
 ```bash
 # 🍏 Switch to clean Apple TV-style grid (no ads, super fast):
 ./switch.sh fresh
@@ -63,7 +83,7 @@ Whenever you want to switch your TV, just run the command you want:
 ./switch.sh default
 ```
 
-*(You can also pass your TV's IP directly, for example: `./switch.sh fresh 192.168.1.50`)*
+*(You can also pass your TV's IP directly, e.g.: `.\switch.ps1 fresh 192.168.1.50` or `./switch.sh fresh 192.168.1.50`)*
 
 ---
 
@@ -81,19 +101,13 @@ You have multiple safety nets in place at all times:
 
 ### 1. The Normal Revert (Recommended)
 To go back to your original factory screen:
-```bash
-./switch.sh default
-```
+* **Windows:** `.\switch.ps1 default`
+* **Mac / Linux:** `./switch.sh default`
 
 ### 2. Full System Restore from Backup
-If you ever want to re-enable everything and restore exact factory states:
-```bash
-./switch.sh restore
-```
-Or view all saved device backups:
-```bash
-./restore.sh --list
-```
+If you ever want to re-enable all original packages and restore exact factory states:
+* **Windows:** `.\switch.ps1 restore`
+* **Mac / Linux:** `./switch.sh restore`
 
 ### 3. Emergency Restore from TV (No computer needed)
 If your computer is off or you gave the TV to someone else, simply grab your TV remote:
@@ -112,11 +126,16 @@ If your computer is off or you gave the TV to someone else, simply grab your TV 
 * **Fix:** Look at your TV screen and accept the **"Allow USB debugging?"** prompt. Tick *"Always allow from this computer"* so it doesn't ask again.
 
 ### Q: It says `adb was not found`.
-* **Fix:** You need the standard Android tools installed. On Mac, run:
-  ```bash
-  brew install android-platform-tools
-  ```
-  *(Or if you have Android Studio installed, it will automatically find it).*
+* **Fix:** You need Android platform-tools installed on your computer:
+  * **On Windows:** Open PowerShell and run:
+    ```powershell
+    winget install Google.PlatformTools
+    ```
+    *(Or download the official zip from [Google Android Platform-Tools](https://developer.android.com/tools/releases/platform-tools) and extract it).*
+  * **On Mac:** Open Terminal and run:
+    ```bash
+    brew install android-platform-tools
+    ```
 
 ### Q: On Google TV, the remote asks "Complete action using..."
 * **Fix:** On newer Google TV sets (Chromecast, Sony, TCL), Android may ask you which launcher to use when you press HOME for the first time. Simply highlight **Aqua TV Home** and click **Always**.
@@ -168,7 +187,9 @@ The full Java and XML source code for the launcher is included in the [`launcher
 ### Repository Structure
 ```
 androidtv-switcher-launcher/
-├── switch.sh                       # Universal launcher switcher & coordinator
+├── switch.sh                       # Mac/Linux switcher script
+├── switch.ps1                      # Windows PowerShell switcher script
+├── switch.bat                      # Windows Command Prompt launcher
 ├── backup.sh                       # Standalone Android TV backup utility
 ├── restore.sh                      # Top-level disaster recovery launcher
 ├── build.sh                        # Recompiles fresh/widgets APKs from source
