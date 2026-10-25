@@ -1,0 +1,12 @@
+.env
+.DS_Store
+*.log
+backups/*
+!backups/.gitkeep
+
+# Gradle build outputs & local config
+.gradle/
+launcher/.gradle/
+launcher/local.properties
+launcher/build/
+launcher/app/build/
