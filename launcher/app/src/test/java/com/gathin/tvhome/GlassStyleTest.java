@@ -8,6 +8,12 @@ import static org.junit.Assert.assertEquals;
 public class GlassStyleTest {
 
     @Test
+    public void liquidByNameAnyCase() {
+        assertEquals(Config.GLASS_LIQUID, Config.glassStyle("liquid"));
+        assertEquals(Config.GLASS_LIQUID, Config.glassStyle(" Liquid "));
+    }
+
+    @Test
     public void rimByNameAnyCase() {
         assertEquals(Config.GLASS_RIM, Config.glassStyle("rim"));
         assertEquals(Config.GLASS_RIM, Config.glassStyle(" Rim "));

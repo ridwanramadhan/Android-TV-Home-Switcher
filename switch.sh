@@ -2,11 +2,13 @@
 # Android TV Home Switcher
 #
 # Universal launcher switcher for Android TV and Google TV devices:
-#   default  - the stock launcher (Google TV launcherx, Android TV tvlauncher, PatchWall, etc.)
-#   fresh    - Aqua TV Home, Apple TV-style grid, no dashboard cards
-#   widgets  - Aqua TV Home with Prayer Times, Weather and AQI cards
-#   backup   - Full backup of TV state, package configurations, and stock launcher APK
-#   restore  - Restore the TV back to its factory stock launcher and configuration
+#   default        - the stock launcher (Google TV launcherx, Android TV tvlauncher, PatchWall, etc.)
+#   glass          - Glass TV, clean Apple TV-style grid, liquid glass, no widgets
+#   glass-widgets  - Glass TV with beautiful digital clock & 3 Liquid Glass widgets (Prayer, Weather, AQI) + Adzan
+#   backup         - Full backup of TV state, package configurations, and stock launcher APK
+#   restore        - Restore the TV back to its factory stock launcher and configuration
+#
+# Attribution: https://github.com/cocombee/glass-tv
 #
 # Safe for all Android TV & Google TV devices (API 26+ / Android 8.0 - 14+).
 # Automatically creates a baseline backup before first modification.
@@ -68,9 +70,9 @@ Usage:
   ./switch.sh list
 
 Modes:
-  default, stock, 1       Stock launcher (auto-detects Google TV, Android TV, PatchWall)
-  fresh, appletv, 2       Aqua TV Home, clean Apple TV-style grid (no widgets)
-  widgets, dashboard, 3   Aqua TV Home with Prayer Times, Weather & AQI cards
+  default, stock, 1            Stock launcher (auto-detects Google TV, Android TV, PatchWall)
+  glass, glass-fresh, fresh, 2 Glass TV clean grid (Apple TV style, liquid glass, no widgets)
+  glass-widgets, widgets, 3    Glass TV with digital clock, 3 Liquid Glass widgets & Adzan sound
 
 Management:
   status                  Show TV details, stock launcher detection, and backup status
@@ -94,13 +96,13 @@ EOF
 }
 
 list_modes() {
-  printf '\n%s%-10s %-22s %s%s\n' "$C_BOLD" "MODE" "ALIASES" "WHAT IT SHOWS" "$C_RESET"
-  printf '%-10s %-22s %s\n' "default" "stock, 1" "Stock TV launcher (Google TV / Android TV / OEM)"
-  printf '%-10s %-22s %s\n' "fresh" "appletv, 2" "Aqua TV Home, clean Apple TV-style grid"
-  printf '%-10s %-22s %s\n' "widgets" "dashboard, 3" "Aqua TV Home + Prayer, Weather, AQI cards"
-  printf '%-10s %-22s %s\n' "backup" "dump, snapshot" "Full backup of packages, settings & stock APK"
-  printf '%-10s %-22s %s\n' "restore" "recover, reset" "Revert to original stock launcher and packages"
-  printf '\nRun ./switch.sh <mode>, for example: ./switch.sh fresh\n\n'
+  printf '\n%s%-15s %-24s %s%s\n' "$C_BOLD" "MODE" "ALIASES" "WHAT IT SHOWS" "$C_RESET"
+  printf '%-15s %-24s %s\n' "default" "stock, 1" "Stock TV launcher (Google TV / Android TV / OEM)"
+  printf '%-15s %-24s %s\n' "glass" "glass-fresh, fresh, 2" "Glass TV, clean Apple TV-style grid (liquid glass, no widgets)"
+  printf '%-15s %-24s %s\n' "glass-widgets" "widgets, dashboard, 3" "Glass TV + Digital Clock, 3 Liquid Glass widgets & Adzan"
+  printf '%-15s %-24s %s\n' "backup" "dump, snapshot" "Full backup of packages, settings & stock APK"
+  printf '%-15s %-24s %s\n' "restore" "recover, reset" "Revert to original stock launcher and packages"
+  printf '\nRun ./switch.sh <mode>, for example: ./switch.sh glass\n\n'
 }
 
 load_env() {
@@ -142,10 +144,12 @@ validate_config() {
   LAUNCHER_PACKAGE="${LAUNCHER_PACKAGE:-com.gathin.tvhome}"
   LAUNCHER_ACTIVITY="${LAUNCHER_ACTIVITY:-$LAUNCHER_PACKAGE/.MainActivity}"
 
-  FRESH_APK="${FRESH_APK:-apks/aqua-tv-home-fresh.apk}"
-  WIDGETS_APK="${WIDGETS_APK:-apks/aqua-tv-home-widgets.apk}"
+  FRESH_APK="${FRESH_APK:-apks/glass-tv-fresh.apk}"
+  WIDGETS_APK="${WIDGETS_APK:-apks/glass-tv-widgets.apk}"
   case "$FRESH_APK" in /*) ;; *) FRESH_APK="$SCRIPT_DIR/$FRESH_APK" ;; esac
   case "$WIDGETS_APK" in /*) ;; *) WIDGETS_APK="$SCRIPT_DIR/$WIDGETS_APK" ;; esac
+  [[ -f "$FRESH_APK" ]] || FRESH_APK="$SCRIPT_DIR/apks/aqua-tv-home-fresh.apk"
+  [[ -f "$WIDGETS_APK" ]] || WIDGETS_APK="$SCRIPT_DIR/apks/aqua-tv-home-widgets.apk"
 }
 
 find_adb() {
@@ -458,6 +462,7 @@ switch_aqua() {
     run_adb install -r -d -g "$apk"
     run_adb shell "pm enable --user 0 $LAUNCHER_PACKAGE"
     run_adb shell "pm grant $LAUNCHER_PACKAGE android.permission.ACCESS_FINE_LOCATION"
+    run_adb shell "appops set $LAUNCHER_PACKAGE SYSTEM_ALERT_WINDOW allow" >/dev/null 2>&1 || true
   else
     out="$(run_adb install -r -d -g "$apk" 2>&1 || true)"
     printf '%s\n' "$out" | sed 's/^/  /'
@@ -490,6 +495,7 @@ switch_aqua() {
       printf '%s\n' "$out" | sed 's/^/  /'
     fi
     run_adb shell "pm grant $LAUNCHER_PACKAGE android.permission.ACCESS_FINE_LOCATION" >/dev/null 2>&1 || true
+    run_adb shell "appops set $LAUNCHER_PACKAGE SYSTEM_ALERT_WINDOW allow" >/dev/null 2>&1 || true
     run_adb shell "am force-stop $LAUNCHER_PACKAGE" >/dev/null 2>&1 || true
   fi
 
@@ -656,12 +662,12 @@ if [[ -z "$ACTION" ]]; then
 fi
 
 case "$ACTION" in
-  default|stock|1)        MODE="default" ;;
-  fresh|appletv|apple|2)  MODE="fresh" ;;
-  widgets|dashboard|3)    MODE="widgets" ;;
-  status)                 MODE="status" ;;
-  backup|snapshot|dump)   MODE="backup" ;;
-  restore|recover|reset)  MODE="restore" ;;
+  default|stock|1)                          MODE="default" ;;
+  glass|glass-fresh|fresh|appletv|apple|2)  MODE="glass-fresh" ;;
+  glass-widgets|widgets|dashboard|3)        MODE="glass-widgets" ;;
+  status)                                   MODE="status" ;;
+  backup|snapshot|dump)                     MODE="backup" ;;
+  restore|recover|reset)                    MODE="restore" ;;
   *) die "Unknown mode '$ACTION'. Run './switch.sh list' to see available modes." ;;
 esac
 
@@ -701,11 +707,11 @@ case "$MODE" in
   default)
     switch_stock
     ;;
-  fresh)
-    switch_aqua "$FRESH_APK" "Aqua TV Home - fresh (no widgets)"
+  glass-fresh|fresh)
+    switch_aqua "$FRESH_APK" "Glass TV - fresh (liquid glass, no widgets)"
     ;;
-  widgets)
-    switch_aqua "$WIDGETS_APK" "Aqua TV Home - widgets (Prayer, Weather, AQI)"
+  glass-widgets|widgets)
+    switch_aqua "$WIDGETS_APK" "Glass TV - widgets (digital clock, Prayer, Weather, AQI & Adzan)"
     ;;
 esac
 

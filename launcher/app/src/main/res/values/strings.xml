@@ -148,4 +148,12 @@
     <!-- Cinematic top shelf (cinematic_home): the line under the focused dock app's name; %1$s is when it was
          last opened, e.g. "5 minutes ago" or "yesterday, 9:40 pm". -->
     <string name="last_opened">Last opened %1$s</string>
+
+    <!-- Fullscreen Adzan prayer call -->
+    <string name="adzan_prayer_time">Waktu Sholat %1$s Telah Tiba</string>
+    <string name="adzan_title_default">Waktu Sholat Telah Tiba</string>
+    <string name="adzan_subtitle">Upin &amp; Ipin — Laungan Azan</string>
+    <string name="adzan_dismiss">Tutup Adzan</string>
+    <string name="adzan_keep_screen">Tetap Tampilkan</string>
+    <string name="adzan_hint_remote">Tekan KEMBALI untuk menutup</string>
 </resources>

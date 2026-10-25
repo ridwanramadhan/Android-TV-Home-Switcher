@@ -10,8 +10,11 @@ import android.util.AttributeSet;
 import android.view.View;
 
 /**
- * A translucent glass slab: soft sheen fill, bright top specular, crisp rim and a faint outer glow.
+ * A translucent glass slab: soft sheen fill, bright top specular, crisp Apple Liquid Glass rim
+ * and a faint outer glow.
  * One instance floats over the grid and is moved with spring animations between tiles.
+ *
+ * Attribution: https://github.com/cocombee/glass-tv
  */
 public class GlassView extends View {
 
@@ -19,6 +22,7 @@ public class GlassView extends View {
     private final Paint specular = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint rim = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint glow = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final GlassRim liquidRim;
     private final RectF rect = new RectF();
     private final float density;
     private float radius;
@@ -29,6 +33,7 @@ public class GlassView extends View {
     /** glass_style rim or halo: no sheen and no fill, only the crisp rim (and, for halo, a lighter outer glow). */
     private boolean flat;
     private boolean halo;
+    private boolean liquid = true;
 
     public GlassView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -38,9 +43,9 @@ public class GlassView extends View {
         rim.setStrokeWidth(1.5f * density);
         rim.setColor(0xCCFFFFFF);
         glow.setStyle(Paint.Style.STROKE);
+        liquidRim = new GlassRim(1.5f * density, 0xD9FFFFFF, 0x1AFFFFFF, 0.85f);
         // Cache the slab as a texture. The spring only changes translation, so the GPU can
-        // move it without replaying clipPath and the glow on every frame. That path is
-        // software-rendered on the MT5895 and is what makes the highlight crawl.
+        // move it without replaying clipPath and the glow on every frame.
         setLayerType(LAYER_TYPE_HARDWARE, null);
     }
 
@@ -65,6 +70,7 @@ public class GlassView extends View {
     void setStyle(String style) {
         flat = Config.GLASS_RIM.equals(style) || Config.GLASS_HALO.equals(style);
         halo = Config.GLASS_HALO.equals(style);
+        liquid = Config.GLASS_LIQUID.equals(style) || Config.GLASS_DEFAULT.equals(style);
         rim.setStrokeWidth((flat ? 2f : 1.5f) * density);
         invalidate();
     }
@@ -86,9 +92,7 @@ public class GlassView extends View {
         float inset = 6f * density;   // room for the glow
         rect.set(inset, inset, getWidth() - inset, getHeight() - inset);
 
-        // Outer glow: thin rings across the inset, each a little fainter, so it fades out smoothly. Three wide
-        // strokes left visible bands once the glow took an app's colour at a stronger alpha. The hardware layer
-        // caches the result, so the rings cost one draw, not one per frame of the spring.
+        // Outer glow: thin rings across the inset, each a little fainter, so it fades out smoothly.
         if (!flat || halo) {
             int rings = 12;
             float step = inset / rings;
@@ -102,19 +106,29 @@ public class GlassView extends View {
             }
         }
         if (flat) {
-            canvas.drawRoundRect(rect, radius, radius, rim);
+            if (liquid) {
+                liquidRim.fit(rect);
+                canvas.drawRoundRect(rect, radius, radius, liquidRim.paint);
+            } else {
+                canvas.drawRoundRect(rect, radius, radius, rim);
+            }
             return;
         }
 
         canvas.drawRoundRect(rect, radius, radius, fill);
 
-        // Sheen across the top 45%: clipRect stays on the GPU (clipPath did not on the MT5895) and
+        // Sheen across the top 45%: clipRect stays on the GPU and
         // the round rect under it keeps the top corners rounded with a flat bottom edge.
         canvas.save();
         canvas.clipRect(rect.left, rect.top, rect.right, rect.top + rect.height() * 0.45f);
         canvas.drawRoundRect(rect, radius, radius, specular);
         canvas.restore();
 
-        canvas.drawRoundRect(rect, radius, radius, rim);
+        if (liquid) {
+            liquidRim.fit(rect);
+            canvas.drawRoundRect(rect, radius, radius, liquidRim.paint);
+        } else {
+            canvas.drawRoundRect(rect, radius, radius, rim);
+        }
     }
 }

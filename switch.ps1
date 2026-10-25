@@ -33,14 +33,17 @@ $EnvFile = Join-Path $ScriptDir ".env"
 $BackupsDir = Join-Path $ScriptDir "backups"
 $ApksDir = Join-Path $ScriptDir "apks"
 
-$FreshApk = Join-Path $ApksDir "aqua-tv-home-fresh.apk"
-$WidgetsApk = Join-Path $ApksDir "aqua-tv-home-widgets.apk"
+$GlassFreshApk = Join-Path $ApksDir "glass-tv-fresh.apk"
+$GlassWidgetsApk = Join-Path $ApksDir "glass-tv-widgets.apk"
+$FreshApk = if (Test-Path $GlassFreshApk) { $GlassFreshApk } else { Join-Path $ApksDir "aqua-tv-home-fresh.apk" }
+$WidgetsApk = if (Test-Path $GlassWidgetsApk) { $GlassWidgetsApk } else { Join-Path $ApksDir "aqua-tv-home-widgets.apk" }
 $LauncherPackage = "com.gathin.tvhome"
 $LauncherActivity = "com.gathin.tvhome/.MainActivity"
 
 function Show-Usage {
     Write-Host @"
 Android TV Home Switcher (Windows PowerShell) v1.1.0
+Attribution: https://github.com/cocombee/glass-tv
 
 Usage:
   .\switch.ps1 <mode> [device_ip] [options]
@@ -49,9 +52,9 @@ Usage:
   .\switch.ps1 restore [device_ip]
 
 Modes:
-  default, stock, 1       Stock launcher (auto-detects Google TV, Android TV, PatchWall)
-  fresh, appletv, 2       Aqua TV Home, clean Apple TV-style grid (no widgets)
-  widgets, dashboard, 3   Aqua TV Home with Prayer Times, Weather & AQI cards
+  default, stock, 1            Stock launcher (auto-detects Google TV, Android TV, PatchWall)
+  glass, glass-fresh, fresh, 2 Glass TV clean grid (Apple TV style, liquid glass, no widgets)
+  glass-widgets, widgets, 3    Glass TV with digital clock, 3 Liquid Glass widgets & Adzan sound
 
 Management:
   status                  Show TV details, stock launcher detection, and backup status
@@ -66,9 +69,10 @@ Options:
 
 Examples:
   .\switch.ps1 status
-  .\switch.ps1 fresh
+  .\switch.ps1 glass
+  .\switch.ps1 glass-widgets
   .\switch.ps1 default
-  .\switch.ps1 fresh 192.168.1.50
+  .\switch.ps1 glass 192.168.1.50
 "@
 }
 
@@ -310,6 +314,7 @@ function Switch-Aqua {
         Write-Host "  [dry-run] adb -s $Serial install -r -d -g $Apk"
         Write-Host "  [dry-run] adb -s $Serial shell pm enable --user 0 $LauncherPackage"
         Write-Host "  [dry-run] adb -s $Serial shell pm grant $LauncherPackage android.permission.ACCESS_FINE_LOCATION"
+        Write-Host "  [dry-run] adb -s $Serial shell appops set $LauncherPackage SYSTEM_ALERT_WINDOW allow"
         Write-Host "  [dry-run] adb -s $Serial shell cmd package set-home-activity --user 0 $LauncherActivity"
         Write-Host "  [dry-run] adb -s $Serial shell am start -W -a android.intent.action.MAIN -c android.intent.category.HOME"
         Write-Host "  [dry-run] adb -s $Serial shell pm disable-user --user 0 $StockPackage"
@@ -321,6 +326,7 @@ function Switch-Aqua {
     & $AdbBin -s $Serial install -r -d -g $Apk | Out-Null
     Run-Adb @("shell", "pm enable --user 0 $LauncherPackage") | Out-Null
     Run-Adb @("shell", "pm grant $LauncherPackage android.permission.ACCESS_FINE_LOCATION") | Out-Null
+    Run-Adb @("shell", "appops set $LauncherPackage SYSTEM_ALERT_WINDOW allow") | Out-Null
     Run-Adb @("shell", "cmd package set-home-activity --user 0 $LauncherActivity") | Out-Null
     Run-Adb @("shell", "am start -W -a android.intent.action.MAIN -c android.intent.category.HOME") | Out-Null
 
@@ -348,16 +354,20 @@ function Restore-Tv {
 Connect-Tv
 
 switch ($Action.ToLower()) {
-    "status"   { Show-Status }
-    "default"  { Switch-Stock }
-    "stock"    { Switch-Stock }
-    "1"        { Switch-Stock }
-    "fresh"    { Switch-Aqua $FreshApk "Aqua TV Home (clean grid)" }
-    "appletv"  { Switch-Aqua $FreshApk "Aqua TV Home (clean grid)" }
-    "2"        { Switch-Aqua $FreshApk "Aqua TV Home (clean grid)" }
-    "widgets"  { Switch-Aqua $WidgetsApk "Aqua TV Home (widgets: Prayer, Weather & AQI)" }
-    "3"        { Switch-Aqua $WidgetsApk "Aqua TV Home (widgets: Prayer, Weather & AQI)" }
-    "backup"   { Backup-Tv }
-    "restore"  { Restore-Tv }
-    default    { throw "Unknown mode '$Action'. Run .\switch.ps1 -Help to see available modes." }
+    "status"         { Show-Status }
+    "default"        { Switch-Stock }
+    "stock"          { Switch-Stock }
+    "1"              { Switch-Stock }
+    "glass"          { Switch-Aqua $FreshApk "Glass TV (clean liquid glass grid)" }
+    "glass-fresh"    { Switch-Aqua $FreshApk "Glass TV (clean liquid glass grid)" }
+    "fresh"          { Switch-Aqua $FreshApk "Glass TV (clean liquid glass grid)" }
+    "appletv"        { Switch-Aqua $FreshApk "Glass TV (clean liquid glass grid)" }
+    "2"              { Switch-Aqua $FreshApk "Glass TV (clean liquid glass grid)" }
+    "glass-widgets"  { Switch-Aqua $WidgetsApk "Glass TV (widgets: Prayer, Weather & AQI + Adzan)" }
+    "widgets"        { Switch-Aqua $WidgetsApk "Glass TV (widgets: Prayer, Weather & AQI + Adzan)" }
+    "dashboard"      { Switch-Aqua $WidgetsApk "Glass TV (widgets: Prayer, Weather & AQI + Adzan)" }
+    "3"              { Switch-Aqua $WidgetsApk "Glass TV (widgets: Prayer, Weather & AQI + Adzan)" }
+    "backup"         { Backup-Tv }
+    "restore"        { Restore-Tv }
+    default          { throw "Unknown mode '$Action'. Run .\switch.ps1 -Help to see available modes." }
 }

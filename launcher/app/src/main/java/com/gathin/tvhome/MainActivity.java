@@ -138,6 +138,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private GlassView glass;
     private DashboardView dashboard;
     private DashboardRepository dashboardRepository;
+    private DashboardSnapshot currentSnapshot;
+    private AdzanPlayer adzanPlayer;
     private boolean dashboardEnabled;
     private View ambient;
     private TextView heroName;
@@ -356,6 +358,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private final BroadcastReceiver timeReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            if ("com.gathin.tvhome.TEST_ADZAN".equals(intent.getAction())) {
+                if (adzanPlayer != null) {
+                    String name = intent.getStringExtra("name");
+                    adzanPlayer.play(name != null ? name : "Ashar");
+                }
+                return;
+            }
             updateClockVisibility();
         }
     };
@@ -364,7 +373,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         public void run() {
             updateGreeting();
             updateRace();
-            if (dashboardEnabled) dashboard.updateCountdown(ZonedDateTime.now());
+            if (dashboardEnabled) {
+                dashboard.updateCountdown(ZonedDateTime.now());
+                if (adzanPlayer != null && currentSnapshot != null && currentSnapshot.prayers != null) {
+                    adzanPlayer.checkPrayerTime(currentSnapshot.prayers, ZonedDateTime.now());
+                }
+            }
             // The pill follows the network callbacks and each return to Home; only the diya's flame follows the
             // signal level, so only it needs this minute's binder calls (about 7 ms on the UI thread).
             if (festive) updateWifiLabel();
@@ -416,6 +430,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         root = findViewById(R.id.root);
         dashboard = findViewById(R.id.dashboard);
         dashboardEnabled = getResources().getBoolean(R.bool.dashboard_panels);
+        adzanPlayer = new AdzanPlayer(this);
         if (dashboardEnabled) {
             dashboard.setVisibility(View.VISIBLE);
             dashboardRepository = new DashboardRepository(this);
@@ -807,6 +822,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         packageFilter.addAction(Intent.ACTION_PACKAGE_CHANGED);
         packageFilter.addDataScheme("package");
         timeFilter.addAction(Intent.ACTION_TIMEZONE_CHANGED);
+        timeFilter.addAction("com.gathin.tvhome.TEST_ADZAN");
         // Registered for the activity's whole life, not only while it is started: an app installed or updated while
         // another app is in front must still mark the tiles stale, or Home would have to rebuild on every return.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -954,7 +970,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         updateRace();
         if (dashboardEnabled) {
             dashboard.updateCountdown(ZonedDateTime.now());
-            dashboardRepository.load(dashboard::setSnapshot);
+            dashboardRepository.load(snapshot -> {
+                currentSnapshot = snapshot;
+                dashboard.setSnapshot(snapshot);
+                if (adzanPlayer != null && snapshot != null && snapshot.prayers != null) {
+                    adzanPlayer.checkPrayerTime(snapshot.prayers, ZonedDateTime.now());
+                }
+                AdzanScheduler.scheduleNextPrayer(this);
+            });
+            AdzanScheduler.scheduleNextPrayer(this);
         }
         // The network and Inputs pills keep their state while Home is in the background, and callbacks update them
         // when the network or the inputs change, so this refresh only catches anything missed. Its binder calls
@@ -1136,6 +1160,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onPause() {
         super.onPause();
+        if (adzanPlayer != null) adzanPlayer.stop();
         if (dashboardRepository != null) dashboardRepository.stop();
         root.removeCallbacks(showIdleClock);
         endReorder();   // Home or another app while reordering keeps the order so far
@@ -1199,6 +1224,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (adzanPlayer != null) adzanPlayer.stop();
         if (dashboardRepository != null) dashboardRepository.close();
         unregisterReceiver(packageReceiver);
         wallpaperPlayer.close();
@@ -1243,6 +1269,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      */
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (adzanPlayer != null && adzanPlayer.isShowing()) {
+            if (adzanPlayer.onKeyEvent(event)) {
+                return true;
+            }
+        }
         if (handleSettingsKey(event)) return true;
         if (tileMenuEnabled && !reordering && openPopup == null && cardPrompt == null
                 && event.getKeyCode() == KeyEvent.KEYCODE_MENU) {

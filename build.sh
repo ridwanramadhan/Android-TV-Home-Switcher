@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# Android TV Home Launcher Builder
+# Glass TV / Android TV Home Launcher Builder
 #
-# Builds Aqua TV Home APKs from the local Java/XML source code in launcher/.
+# Builds Glass TV APKs from the local Java/XML source code in launcher/.
+# Attribution: https://github.com/cocombee/glass-tv
 #
 # Modes:
-#   fresh    - Apple TV-style clean grid, 5 dock slots, no dashboard cards
-#   widgets  - Aqua TV Home with Prayer Times, Weather & AQI cards
-#   all      - Compiles both builds and places them in apks/
+#   glass, glass-fresh, fresh    - Glass TV clean Apple TV-style grid, liquid glass, no widgets
+#   glass-widgets, widgets       - Glass TV with beautiful digital clock & 3 Liquid Glass widgets (Prayer, Weather, AQI) + Adzan
+#   all                          - Compiles both variants and places them in apks/
 #
 set -euo pipefail
 
@@ -27,19 +28,20 @@ die()  { printf '\033[31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
 
 usage() {
   cat <<EOF
-Aqua TV Home Launcher Builder
+Glass TV Home Launcher Builder
+Attribution: https://github.com/cocombee/glass-tv
 
 Usage:
   ./build.sh <mode>
 
 Modes:
-  fresh       Build clean Apple TV-style launcher (no dashboard cards)
-  widgets     Build dashboard launcher with Prayer Times, Weather & AQI
-  all         Build both fresh and widgets APKs
+  glass, glass-fresh, fresh    Build clean Glass TV launcher (liquid glass, no widgets)
+  glass-widgets, widgets       Build Glass TV with digital clock, 3 Liquid Glass widgets & Adzan
+  all                          Build both fresh and widgets APKs
 
 Examples:
-  ./build.sh fresh
-  ./build.sh widgets
+  ./build.sh glass
+  ./build.sh glass-widgets
   ./build.sh all
 EOF
 }
@@ -88,10 +90,25 @@ find_sdk() {
   die "Android SDK not found. Set ANDROID_HOME or install Android Studio platform-tools."
 }
 
+find_gradle() {
+  local cached
+  cached="$(find "$HOME/.gradle/wrapper/dists" -name gradle -type f -perm +111 2>/dev/null | grep "gradle-8" | sort -r | head -n 1 || true)"
+  if [[ -n "$cached" && -x "$cached" ]]; then
+    printf '%s\n' "$cached"
+    return 0
+  fi
+  if command -v gradle >/dev/null 2>&1; then
+    command -v gradle
+    return 0
+  fi
+  printf '%s\n' "./gradlew"
+}
+
 build_variant() {
   local mode="$1"
   local target_apk="$2"
-  local enable_dash="$3"
+  local alt_apk="${3:-}"
+  local enable_dash="$4"
 
   info "Configuring launcher for: $mode (dashboard_panels=$enable_dash)"
   sed -i '' "s|<bool name=\"dashboard_panels\">.*</bool>|<bool name=\"dashboard_panels\">$enable_dash</bool>|" "$CONFIG_XML"
@@ -103,7 +120,8 @@ build_variant() {
     export ANDROID_HOME="$DETECTED_SDK"
     export PATH="$JAVA_HOME/bin:$PATH"
     echo "sdk.dir=$ANDROID_HOME" > local.properties
-    ./gradlew assembleRelease -q --console=plain
+    GRADLE_BIN="$(find_gradle)"
+    "$GRADLE_BIN" assembleRelease --no-daemon -q --console=plain
   )
 
   local built_apk="$LAUNCHER_DIR/app/build/outputs/apk/release/app-release.apk"
@@ -111,34 +129,34 @@ build_variant() {
 
   mkdir -p "$APKS_DIR"
   cp "$built_apk" "$target_apk"
+  if [[ -n "$alt_apk" ]]; then
+    cp "$built_apk" "$alt_apk"
+  fi
   ok "$mode APK built: $(basename "$target_apk") ($(du -h "$target_apk" | awk '{print $1}'))"
 }
 
 MODE="${1:-}"
 [[ -n "$MODE" ]] || { usage; exit 2; }
 
+DETECTED_JAVA="$(find_java)"
+DETECTED_SDK="$(find_sdk)"
+
 case "$MODE" in
-  fresh)
-    DETECTED_JAVA="$(find_java)"
-    DETECTED_SDK="$(find_sdk)"
-    build_variant "fresh" "$APKS_DIR/aqua-tv-home-fresh.apk" "false"
+  glass|glass-fresh|fresh)
+    build_variant "glass-fresh" "$APKS_DIR/glass-tv-fresh.apk" "$APKS_DIR/aqua-tv-home-fresh.apk" "false"
     ;;
-  widgets)
-    DETECTED_JAVA="$(find_java)"
-    DETECTED_SDK="$(find_sdk)"
-    build_variant "widgets" "$APKS_DIR/aqua-tv-home-widgets.apk" "true"
+  glass-widgets|widgets|dashboard)
+    build_variant "glass-widgets" "$APKS_DIR/glass-tv-widgets.apk" "$APKS_DIR/aqua-tv-home-widgets.apk" "true"
     ;;
   all)
-    DETECTED_JAVA="$(find_java)"
-    DETECTED_SDK="$(find_sdk)"
-    build_variant "fresh" "$APKS_DIR/aqua-tv-home-fresh.apk" "false"
-    build_variant "widgets" "$APKS_DIR/aqua-tv-home-widgets.apk" "true"
+    build_variant "glass-fresh" "$APKS_DIR/glass-tv-fresh.apk" "$APKS_DIR/aqua-tv-home-fresh.apk" "false"
+    build_variant "glass-widgets" "$APKS_DIR/glass-tv-widgets.apk" "$APKS_DIR/aqua-tv-home-widgets.apk" "true"
     ;;
   -h|--help|help)
     usage
     exit 0
     ;;
   *)
-    die "Unknown build mode '$MODE'. Available: fresh, widgets, all."
+    die "Unknown build mode '$MODE'. Available: glass, glass-widgets, fresh, widgets, all."
     ;;
 esac

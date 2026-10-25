@@ -147,6 +147,14 @@ final class DashboardRepository {
         return new DashboardSnapshot(place.label, place.saved, prayers == null ? null : today, prayers, w, a);
     }
 
+    static List<DashboardSnapshot.Prayer> getCachedPrayers(Context context) {
+        if (context == null) return null;
+        SharedPreferences cache = context.getApplicationContext().getSharedPreferences("dashboard_feed", Context.MODE_PRIVATE);
+        String json = cache.getString("prayer_json", null);
+        if (json == null) return null;
+        return parsePrayers(json);
+    }
+
     private static List<DashboardSnapshot.Prayer> parsePrayers(String json) {
         try {
             JSONObject times = new JSONObject(json).getJSONObject("data").getJSONObject("timings");

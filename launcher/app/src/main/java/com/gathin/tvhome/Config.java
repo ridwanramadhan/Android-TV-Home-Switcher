@@ -211,7 +211,7 @@ final class Config {
     final String glassStyle;
 
     static final String GLOW_RADIAL = "radial", GLOW_HORIZON = "horizon";
-    static final String GLASS_DEFAULT = "glass", GLASS_RIM = "rim", GLASS_HALO = "halo";
+    static final String GLASS_DEFAULT = "glass", GLASS_RIM = "rim", GLASS_HALO = "halo", GLASS_LIQUID = "liquid";
     /** Show each rotating wallpaper's name from wallpapers/captions.txt (config.xml / theme wallpaper_captions). */
     final boolean wallpaperCaptions;
     /** Answer VIEW_INPUTS with the Inputs menu (handle_view_inputs); see InputsRequestActivity. */
@@ -358,6 +358,7 @@ final class Config {
     static String glassStyle(String value) {
         if (value == null) return GLASS_DEFAULT;
         String v = value.trim();
+        if (GLASS_LIQUID.equalsIgnoreCase(v)) return GLASS_LIQUID;
         if (GLASS_RIM.equalsIgnoreCase(v)) return GLASS_RIM;
         return GLASS_HALO.equalsIgnoreCase(v) ? GLASS_HALO : GLASS_DEFAULT;
     }

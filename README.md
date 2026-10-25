@@ -1,13 +1,37 @@
-# 📺 Android TV Home Switcher
+# 📺 Android TV Home Switcher (Glass TV Edition)
 
-Transform your Android TV or Google TV into a **clean, fast, ad-free Apple TV-style home screen** with a single command from your computer.
+Transform your Android TV or Google TV into a **clean, fast, ad-free Apple TV-style Glass Home Screen** with a single command from your computer.
+
+Powered by [cocombee/glass-tv](https://github.com/cocombee/glass-tv) with **Apple Liquid Glass** design, live widgets, and full reversible safety backups.
 
 Works with **any** Android TV or Google TV brand (Sony, TCL, Xiaomi, Chromecast with Google TV, AQUA, Hisense, Philips, etc.).
 
-| 📺 Original TV Home (Stock) | 🍏 Fresh Mode (Clean Apple TV Grid) | 🕌 Widgets Mode (Prayer, Weather & AQI) |
+| 📺 Original TV Home (Stock) | 💎 Glass Fresh Mode (Apple TV Grid) | 🕌 Glass Widgets Mode (Clock, Prayer, Weather & AQI) |
 | :---: | :---: | :---: |
 | <img src="docs/mode-default.png" width="280" alt="Default TV launcher"> | <img src="docs/mode-fresh.png" width="280" alt="Fresh theme"> | <img src="docs/mode-widgets.png" width="280" alt="Widgets theme"> |
-| Your TV's original factory screen | Clean 5-slot dock + grid (zero ads) | Clean grid + Live Prayer, Weather & AQI |
+| Your TV's original factory screen | Clean 5-slot dock + Liquid Glass selection (zero ads) | Beautiful digital clock + 3 Liquid Glass widgets + Adzan sound |
+
+---
+
+## ✨ Features
+
+* **💎 Apple Liquid Glass Selection & Panels:** Gliding selection and informational cards feature translucent frosted glass, specular diagonal shine highlights catching top-left and bottom-right edges (`GlassRim`), and soft ambient app glow.
+* **✌️ Two Distinct Styles:**
+  * **Fresh Style (`glass` / `fresh`):** Super-clean minimalist Apple TV-style dock and app grid without widgets.
+  * **Widgets Style (`glass-widgets` / `widgets`):** Features a beautiful digital clock + 3 live Liquid Glass cards:
+    1. **Live Islamic Prayer Times:** 7 prayer slots (Imsak, Subuh, Syuruq, Dzuhur, Ashar, Maghrib, Isya) with next prayer countdown pill.
+    2. **Real-time Weather:** Current temperature, weather condition symbol, high/low, and 5-hour micro forecast bar.
+    3. **Air Quality Index (AQI):** Radial ring meter with US AQI color codes (Good, Moderate, Sensitive, Unhealthy) and status rating.
+* **🌌 Ambient Liquid Glass Screensaver:**
+  * Displays the large clock, date, and **all 3 Liquid Glass widgets (Prayer, Weather, AQI)** right on your TV screensaver.
+  * Features smart **OLED burn-in protection** with subtle micro-drifting pixel shifts every minute.
+* **🕌 1080p Full HD Dedicated Adzan Videos:**
+  * **🌅 Adzan Subuh (Fajr):** Automatically plays the official **1080p Full HD [Riko The Series - Adzan Subuh](https://www.youtube.com/watch?v=p6zIq6J0rSk)** (`res/raw/adzan_subuh.mp4`) featuring the morning prayer call (*Ash-shalatu khairum minan naum*).
+  * **☀️ Dzuhur, Ashar, Maghrib & Isya:** Automatically plays the official **1080p Full HD [Upin & Ipin Iqra' - Laungan Azan](https://www.youtube.com/watch?v=UPAnvq9mAc0)** (`res/raw/adzan.mp4`).
+  * **Active Everywhere:** Triggers on the home screen, during the screensaver, and **even while watching movies on Netflix, Disney+, YouTube, or Prime Video**.
+  * **Smart Movie Resume:** Automatically pauses Netflix/Disney+ for the Adzan call. When the Adzan finishes or when you press **Back** on your remote, it smoothly returns right to your movie where you left off.
+* **🏷️ Minimalist Glass TV Watermark:** Subtle, non-intrusive watermark attribution to [cocombee/glass-tv](https://github.com/cocombee/glass-tv) on the home screen.
+* **⚡ Ultra-lightweight & Snappy:** Instant boot, zero lag, hardware-accelerated MediaCodec video decoding, and minimal RAM footprint on low-spec TVs.
 
 ---
 
@@ -61,11 +85,13 @@ Whenever you want to switch your TV, run the command for your system:
 
 #### 💻 Windows (PowerShell or Command Prompt)
 ```powershell
-# 🍏 Switch to clean Apple TV-style grid (no ads, super fast):
-.\switch.ps1 fresh
+# 💎 Switch to Glass TV Fresh mode (Apple TV grid, liquid glass, no widgets):
+.\switch.ps1 glass
+# (or: .\switch.ps1 fresh)
 
-# 🕌 Switch to clean grid + Live Prayer Times, Weather & Air Quality:
-.\switch.ps1 widgets
+# 🕌 Switch to Glass TV Widgets mode (Digital Clock + Prayer, Weather, AQI & Adzan):
+.\switch.ps1 glass-widgets
+# (or: .\switch.ps1 widgets)
 
 # 📺 Revert back to your TV's original factory home screen anytime:
 .\switch.ps1 default
@@ -73,11 +99,13 @@ Whenever you want to switch your TV, run the command for your system:
 
 #### 🍎 Mac / Linux (Terminal)
 ```bash
-# 🍏 Switch to clean Apple TV-style grid (no ads, super fast):
-./switch.sh fresh
+# 💎 Switch to Glass TV Fresh mode (Apple TV grid, liquid glass, no widgets):
+./switch.sh glass
+# (or: ./switch.sh fresh)
 
-# 🕌 Switch to clean grid + Live Prayer Times, Weather & Air Quality:
-./switch.sh widgets
+# 🕌 Switch to Glass TV Widgets mode (Digital Clock + Prayer, Weather, AQI & Adzan):
+./switch.sh glass-widgets
+# (or: ./switch.sh widgets)
 
 # 📺 Revert back to your TV's original factory home screen anytime:
 ./switch.sh default
@@ -143,6 +171,20 @@ If your computer is off or you gave the TV to someone else, simply grab your TV 
 ### Q: Where do the Prayer Times & Weather come from?
 * **Widgets Mode** automatically gets your location from the TV to show local prayer times (AlAdhan / KEMENAG) and weather / Air Quality (Open-Meteo). If your TV has no location fix, it defaults to Jakarta coordinates.
 
+### Q: How do I enable the Widgets Screensaver?
+* On your TV, open **Settings ⚙️ $\rightarrow$ System $\rightarrow$ Screensaver** (or *Device Preferences $\rightarrow$ Screensaver*) and select **Aqua TV Home** (or run `adb shell settings put secure screensaver_components com.gathin.tvhome/.ClockDream`).
+* When the TV is idle, it will display the ambient digital clock + live **Prayer countdown, Weather forecast, and AQI gauge** with automatic micro-drifting OLED burn-in protection.
+
+### Q: How does Adzan work while watching movies (Netflix, Disney+, YouTube)?
+* When a valid prayer time arrives (Subuh, Dzuhur, Ashar, Maghrib, Isya), the built-in exact alarm scheduler triggers a high-priority full-screen Adzan player.
+* Your movie is smoothly paused while the **1080p Full HD Upin & Ipin Adzan** plays with audio.
+* Pressing **Back** or **OK** on your remote (or waiting for the 3-minute video to complete) dismisses the Adzan and takes you **directly back to your movie where you left off**.
+
+### Q: What are the Adzan video resolutions and sources?
+* Both videos are encoded in crisp **1080p Full HD (1920×1080)** with hardware-accelerated H.264 AVC and AAC audio:
+  * **Adzan Subuh:** [Riko The Series - Adzan Subuh](https://www.youtube.com/watch?v=p6zIq6J0rSk) (includes *Ash-shalatu khairum minan naum*).
+  * **Dzuhur, Ashar, Maghrib, Isya:** [Upin & Ipin Iqra' - Laungan Azan](https://www.youtube.com/watch?v=UPAnvq9mAc0).
+
 ---
 
 <details>
@@ -166,9 +208,9 @@ The full Java and XML source code for the launcher is included in the [`launcher
    Edit `SAVED_LAT` and `SAVED_LON` in [`launcher/app/src/main/java/com/gathin/tvhome/DashboardRepository.java`](launcher/app/src/main/java/com/gathin/tvhome/DashboardRepository.java).
 3. **Rebuild APKs from Source:**
    ```bash
-   ./build.sh fresh       # Recompiles clean grid build
-   ./build.sh widgets     # Recompiles widgets build
-   ./build.sh all         # Recompiles both variants
+   ./build.sh glass           # Recompiles clean Glass TV grid build
+   ./build.sh glass-widgets   # Recompiles Glass TV widgets build (+ Adzan)
+   ./build.sh all             # Recompiles both variants
    ```
 
 ### Android TV OS Version Compatibility
@@ -187,16 +229,18 @@ The full Java and XML source code for the launcher is included in the [`launcher
 ### Repository Structure
 ```
 androidtv-switcher-launcher/
-├── switch.sh                       # Mac/Linux switcher script
+├── switch.sh                       # Mac/Linux switcher script (modes: glass, glass-widgets, default)
 ├── switch.ps1                      # Windows PowerShell switcher script
 ├── switch.bat                      # Windows Command Prompt launcher
 ├── backup.sh                       # Standalone Android TV backup utility
 ├── restore.sh                      # Top-level disaster recovery launcher
-├── build.sh                        # Recompiles fresh/widgets APKs from source
-├── launcher/                       # Complete Java & XML Android Gradle source
+├── build.sh                        # Recompiles glass/widgets APKs from source
+├── launcher/                       # Complete Java & XML Android Gradle source (Liquid Glass & Adzan)
 ├── .env                            # Local TV IP configuration (git-ignored)
 ├── .env.example                    # Configuration template
 ├── apks/                           # Compiled release APKs
+│   ├── glass-tv-fresh.apk          # Clean Apple TV grid, liquid glass, no widgets
+│   ├── glass-tv-widgets.apk        # Digital clock, 3 Liquid Glass widgets & Adzan
 │   ├── aqua-tv-home-fresh.apk
 │   └── aqua-tv-home-widgets.apk
 ├── backups/                        # Automatic & manual TV snapshots
@@ -207,4 +251,4 @@ androidtv-switcher-launcher/
 
 ---
 
-Launcher source based on [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv) (MIT). Aqua TV Home is package `com.gathin.tvhome` v2.7 (code 8).
+Launcher source based on [cocombee/glass-tv](https://github.com/cocombee/glass-tv) and [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv) (MIT). Glass TV Home is package `com.gathin.tvhome` v2.7 (code 8).

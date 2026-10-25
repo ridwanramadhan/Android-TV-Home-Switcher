@@ -10,6 +10,16 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!-- 3 Liquid Glass Informational Cards (Prayer, Weather, AQI). Shown when dashboard_panels is true. -->
+    <com.gathin.tvhome.DashboardView
+        android:id="@+id/dreamDashboard"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:focusable="false"
+        android:clickable="false"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
+
     <LinearLayout
         android:id="@+id/dreamContent"
         android:layout_width="wrap_content"

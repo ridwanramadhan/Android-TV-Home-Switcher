@@ -16,11 +16,13 @@ import android.util.DisplayMetrics;
 import android.view.View;
 
 import java.io.File;
+import java.time.ZonedDateTime;
 import java.util.Random;
 
 /**
  * The clock screensaver's scene (layout dream_clock): the thin clock and date on black over a slow ambient
- * glow. Every minute the clock drifts to a new spot and the glow shifts colour, so nothing burns in.
+ * glow, along with optional live Liquid Glass informational cards (Prayer times, Weather, AQI) and
+ * automatic Adzan call to prayer triggers.
  * Shared by ClockDream (the system screensaver) and ClockActivity (Home left idle).
  */
 final class ClockScene {
@@ -36,6 +38,11 @@ final class ClockScene {
     private final Random random = new Random();
     private final View content;
     private final View ambient;
+    private final DashboardView dashboard;
+    private final boolean dashboardEnabled;
+    private DashboardRepository dashboardRepository;
+    private DashboardSnapshot currentSnapshot;
+    private String lastPlayedAdzanKey = "";
     private final GradientDrawable glow;
     private int colorIndex;
     private int glowColor;
@@ -53,6 +60,12 @@ final class ClockScene {
         public void run() {
             moveClock();
             shiftGlow();
+            if (dashboard != null && dashboardEnabled) {
+                dashboard.updateCountdown(ZonedDateTime.now());
+                if (currentSnapshot != null) {
+                    checkPrayerTime(currentSnapshot);
+                }
+            }
             handler.postDelayed(this, MOVE_MS);
         }
     };
@@ -61,6 +74,20 @@ final class ClockScene {
     ClockScene(View root) {
         content = root.findViewById(R.id.dreamContent);
         ambient = root.findViewById(R.id.dreamAmbient);
+        dashboard = root.findViewById(R.id.dreamDashboard);
+
+        Context ctx = root.getContext();
+        boolean panels = false;
+        try {
+            panels = ctx.getResources().getBoolean(R.bool.dashboard_panels);
+        } catch (Exception ignored) {
+        }
+        dashboardEnabled = panels;
+
+        if (dashboard != null) {
+            dashboard.setVisibility(dashboardEnabled ? View.VISIBLE : View.GONE);
+        }
+
         glow = new GradientDrawable();
         glow.setGradientType(GradientDrawable.RADIAL_GRADIENT);
         ambient.setBackground(glow);
@@ -72,10 +99,28 @@ final class ClockScene {
 
     void start() {
         content.setAlpha(0f);
+        if (dashboard != null && dashboardEnabled) {
+            dashboard.setAlpha(0f);
+        }
         content.post(() -> {
             placeClock();
             content.animate().alpha(1f).setDuration(1200).start();
+            if (dashboard != null && dashboardEnabled) {
+                dashboard.animate().alpha(1f).setDuration(1200).start();
+            }
         });
+
+        if (dashboard != null && dashboardEnabled) {
+            if (dashboardRepository == null) {
+                dashboardRepository = new DashboardRepository(content.getContext());
+            }
+            dashboardRepository.load(snap -> {
+                currentSnapshot = snap;
+                dashboard.setSnapshot(snap);
+                checkPrayerTime(snap);
+            });
+        }
+
         handler.removeCallbacks(tick);
         handler.postDelayed(tick, MOVE_MS);
         if (wallpaperFile != null && !wallpaperShown) loadWallpaper();
@@ -84,6 +129,10 @@ final class ClockScene {
     void stop() {
         handler.removeCallbacksAndMessages(null);   // the tick and any glow steps still queued
         content.animate().cancel();
+        if (dashboard != null) dashboard.animate().cancel();
+        if (dashboardRepository != null) {
+            dashboardRepository.stop();
+        }
         wallpaperGeneration++;   // a decode still running must not attach its picture to a stopped scene
     }
 
@@ -167,18 +216,56 @@ final class ClockScene {
         }).start();
     }
 
-    /** A random spot that keeps the whole clock on screen, with the glow centred behind it. */
+    /** A spot that keeps the clock on screen with OLED burn-in protection, glow centred. */
     private void placeClock() {
         View parent = (View) content.getParent();
-        int maxX = Math.max(0, parent.getWidth() - content.getWidth());
-        int maxY = Math.max(0, parent.getHeight() - content.getHeight());
-        float x = maxX * (0.1f + 0.8f * random.nextFloat());
-        float y = maxY * (0.1f + 0.8f * random.nextFloat());
-        content.setX(x);
-        content.setY(y);
-        if (parent.getWidth() > 0 && parent.getHeight() > 0) {
-            glow.setGradientCenter((x + content.getWidth() / 2f) / parent.getWidth(),
-                    (y + content.getHeight() / 2f) / parent.getHeight());
+        if (dashboardEnabled && dashboard != null) {
+            // Anchor clock above the 3 widgets, with gentle OLED pixel-shift (+-14px)
+            float density = content.getResources().getDisplayMetrics().density;
+            float baseX = 42f * density;
+            float baseY = 16f * density;
+            float driftX = (random.nextFloat() * 28f - 14f) * density;
+            float driftY = (random.nextFloat() * 16f - 8f) * density;
+            content.setX(baseX + driftX);
+            content.setY(baseY + driftY);
+            dashboard.setTranslationX(driftX * 0.4f);
+            dashboard.setTranslationY(driftY * 0.4f);
+            if (parent.getWidth() > 0 && parent.getHeight() > 0) {
+                glow.setGradientCenter(0.5f, 0.45f);
+            }
+        } else {
+            int maxX = Math.max(0, parent.getWidth() - content.getWidth());
+            int maxY = Math.max(0, parent.getHeight() - content.getHeight());
+            float x = maxX * (0.1f + 0.8f * random.nextFloat());
+            float y = maxY * (0.1f + 0.8f * random.nextFloat());
+            content.setX(x);
+            content.setY(y);
+            if (parent.getWidth() > 0 && parent.getHeight() > 0) {
+                glow.setGradientCenter((x + content.getWidth() / 2f) / parent.getWidth(),
+                        (y + content.getHeight() / 2f) / parent.getHeight());
+            }
+        }
+    }
+
+    private void checkPrayerTime(DashboardSnapshot snap) {
+        if (snap == null || snap.prayers == null || snap.prayers.isEmpty()) return;
+        ZonedDateTime now = ZonedDateTime.now();
+        int hour = now.getHour();
+        int min = now.getMinute();
+        String today = now.toLocalDate().toString();
+        for (DashboardSnapshot.Prayer p : snap.prayers) {
+            if (p.name.equalsIgnoreCase("Imsak") || p.name.equalsIgnoreCase("Syuruq")
+                    || p.name.equalsIgnoreCase("Sunrise")) {
+                continue;
+            }
+            if (p.time.getHour() == hour && p.time.getMinute() == min) {
+                String key = today + "_" + p.name;
+                if (!key.equals(lastPlayedAdzanKey)) {
+                    lastPlayedAdzanKey = key;
+                    AdzanActivity.start(content.getContext(), p.name);
+                }
+                break;
+            }
         }
     }
 
