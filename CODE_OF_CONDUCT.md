@@ -15,6 +15,6 @@ Harassment, discrimination, threats, sexualized attention, personal attacks, dox
 
 ## Reporting and enforcement
 
-Report conduct concerns privately to the maintainer at **ridwanramadhan8888@gmail.com**. Include links or context if safe to share. Reports will be handled as confidentially as practical. The maintainer may edit or remove content, warn participants, or restrict participation, depending on severity. If the concern involves the maintainer, use GitHub's platform reporting tools.
+Report conduct concerns privately to the maintainer at **echo.ridwanramadhan@gmail.com**. Include links or context if safe to share. Reports will be handled as confidentially as practical. The maintainer may edit or remove content, warn participants, or restrict participation, depending on severity. If the concern involves the maintainer, use GitHub's platform reporting tools.
 
 This policy applies to repository issues, pull requests, discussions, and other project spaces.
