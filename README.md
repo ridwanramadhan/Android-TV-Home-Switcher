@@ -21,7 +21,7 @@ The TV launcher artwork used by Android is [a separate 320×180 banner](launcher
   - **Prayer times** — the seven slots the feed returns (Imsak, Subuh, Syuruq, Dzuhur, Ashar, Maghrib, Isya) with a countdown pill to the next call.
   - **Weather** — current temperature and condition, today's high and low, and a five-hour strip.
   - **Air quality** — a US AQI ring with the band name (Good, Moderate, Sensitive groups, Unhealthy, and so on).
-- **ClockDream screensaver.** The large clock and date, the same three cards, and gentle OLED burn-in protection: the clock drifts a few pixels every minute, and the coloured glow can be replaced by your wallpaper or plain black.
+- **Indonesian mosque gallery screensaver.** The widgets build rotates through 30 bundled Wikimedia Commons mosque photographs every minute, works offline, and keeps the clock, prayer, weather, and AQI cards visible. Each image includes its mosque, location, photographer, and license.
 - **Adzan over whatever is playing.** One exact alarm per prayer opens a full-screen 1080p video with audio, from Home, from the screensaver, or while a streaming app is in front. Back or the on-screen button closes it and returns you to the app underneath.
 - **Reversible.** The stock launcher stays installed and is only disabled once the new Home is confirmed, and `default` puts it back. Nothing is flashed and nothing is uninstalled for you.
 - **Small and quiet.** R8 shrinking, hardware-decoded video, no web views and no analytics. The launcher talks to AlAdhan and Open-Meteo for the cards and to nothing else.
@@ -67,17 +67,17 @@ Use `./switch.sh list` or `./switch.sh --help` for shell aliases and options. In
 
 ## Modes and data
 
-| Mode                        | APK                         | Features                                                       |
-| --------------------------- | --------------------------- | -------------------------------------------------------------- |
-| `glass` / `fresh`           | `apks/glass-tv-fresh.apk`   | Glass-style app grid and dock                                  |
-| `glass-widgets` / `widgets` | `apks/glass-tv-widgets.apk` | Dashboard cards, clock screensaver, and scheduled Adzan player |
-| `default` / `stock`         | None                        | Re-enables and selects the detected stock launcher             |
+| Mode                        | APK                         | Features                                                                           |
+| --------------------------- | --------------------------- | ---------------------------------------------------------------------------------- |
+| `glass` / `fresh`           | `apks/glass-tv-fresh.apk`   | Glass-style app grid and dock                                                      |
+| `glass-widgets` / `widgets` | `apks/glass-tv-widgets.apk` | Dashboard cards, clock screensaver with mosque gallery, and scheduled Adzan player |
+| `default` / `stock`         | None                        | Re-enables and selects the detected stock launcher                                 |
 
 The widgets build reads the TV's location when available. Prayer times come from [AlAdhan](https://aladhan.com/) using the Kemenag calculation method; weather and US AQI come from [Open-Meteo](https://open-meteo.com/). If location is unavailable, the code uses a fallback in East Jakarta. These cards require network access and may be empty or stale offline.
 
 Adzan is scheduled with one exact OS alarm per prayer. If Android or the OEM withholds exact alarms, the call can fire late; the app logs this rather than pretending it is exact. Playback depends on the TV's alarm and activity behavior, so test it on your device before relying on it. The switchers grant `SYSTEM_ALERT_WINDOW`, which the launcher never draws with: it is the exemption that lets the alarm open the call to prayer while another app is in front.
 
-The launcher also provides a `ClockDream` screensaver service. Select **Aqua TV Home Clock** in the TV's screensaver settings if your firmware exposes that option.
+The launcher also provides a `ClockDream` screensaver service. Select **Aqua TV Home Clock** in the TV's screensaver settings if your firmware exposes that option. A configured `clock_wallpaper` still overrides the bundled mosque gallery.
 
 ### What the Adzan does, and what it does not
 
