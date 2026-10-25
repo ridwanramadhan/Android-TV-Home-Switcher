@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="850" viewBox="0 0 1440 850" role="img" aria-labelledby="title desc">
+  <title id="title">Android TV Home Switcher architecture</title>
+  <desc id="desc">A computer runs switch, build, backup and restore scripts. ADB connects the computer to Android TV. The TV keeps its stock launcher installed while Aqua TV Home is selected. Backup files are saved on the computer.</desc>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1"><stop stop-color="#090b13"/><stop offset="1" stop-color="#190e1c"/></linearGradient>
+    <linearGradient id="card" x2="0" y2="1"><stop stop-color="#252333"/><stop offset="1" stop-color="#171822"/></linearGradient>
+    <linearGradient id="accent" x2="1" y2="0"><stop stop-color="#e86b8c"/><stop offset="1" stop-color="#f3ad78"/></linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#f0a383"/></marker>
+    <style>
+      .title{font:700 38px system-ui,sans-serif;fill:#faf7f9}.subtitle{font:16px system-ui,sans-serif;fill:#c4becb}
+      .label{font:700 13px system-ui,sans-serif;letter-spacing:2px;fill:#e9a5b4}.heading{font:700 22px system-ui,sans-serif;fill:#fff9fc}
+      .body{font:15px system-ui,sans-serif;fill:#d4cfda}.small{font:13px system-ui,sans-serif;fill:#a9a3b3}
+      .mono{font:15px ui-monospace,SFMono-Regular,monospace;fill:#f7ced7}
+      .panel{fill:url(#card);stroke:#514456;stroke-width:1.5}.inset{fill:#161722;stroke:#393543}
+      .flow{fill:none;stroke:url(#accent);stroke-width:3;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1440" height="850" fill="url(#background)"/>
+  <circle cx="1250" cy="50" r="290" fill="#9b344e" opacity=".12"/>
+  <circle cx="140" cy="810" r="270" fill="#567382" opacity=".08"/>
+  <text x="72" y="65" class="label">ARCHITECTURE</text>
+  <text x="72" y="116" class="title">From your computer to the TV, with a way back</text>
+  <text x="72" y="151" class="subtitle">The scripts use ADB over your local network. The stock Home package stays installed.</text>
+
+  <text x="74" y="218" class="label">YOUR COMPUTER</text>
+  <text x="574" y="218" class="label">LOCAL CONNECTION</text>
+  <text x="956" y="218" class="label">ANDROID TV / GOOGLE TV</text>
+
+  <rect x="72" y="240" width="424" height="306" rx="22" class="panel"/>
+  <text x="100" y="288" class="heading">Switcher scripts</text>
+  <text x="100" y="319" class="mono">switch.sh  /  switch.ps1</text>
+  <text x="100" y="357" class="body">1. Detect stock Home and device state</text>
+  <text x="100" y="389" class="body">2. Create a baseline backup on first switch</text>
+  <text x="100" y="421" class="body">3. Install Fresh or Widgets APK</text>
+  <text x="100" y="453" class="body">4. Select Aqua as Home</text>
+  <text x="100" y="485" class="body">5. Disable stock Home for user 0 if needed</text>
+  <text x="100" y="521" class="small">default mode re-enables and selects stock Home.</text>
+
+  <rect x="72" y="568" width="424" height="190" rx="22" class="panel"/>
+  <text x="100" y="610" class="heading">Local backup and build</text>
+  <text x="100" y="642" class="mono">backups/</text>
+  <text x="100" y="673" class="body">Package lists, settings dumps, stock APK</text>
+  <text x="100" y="701" class="body">and a restore script stay on this computer.</text>
+  <text x="100" y="736" class="small">build.sh + Gradle create the two APK variants.</text>
+
+  <rect x="552" y="240" width="300" height="518" rx="22" fill="#121420" stroke="#514456" stroke-dasharray="7 7"/>
+  <text x="585" y="288" class="heading">ADB over LAN</text>
+  <text x="585" y="320" class="small">TV authorization required</text>
+  <rect x="579" y="358" width="246" height="70" rx="13" class="inset"/>
+  <text x="600" y="388" class="mono">adb connect</text>
+  <text x="600" y="412" class="small">TV_IP:5555</text>
+  <rect x="579" y="446" width="246" height="80" rx="13" class="inset"/>
+  <text x="600" y="477" class="mono">adb install</text>
+  <text x="600" y="502" class="small">set-home-activity</text>
+  <rect x="579" y="544" width="246" height="80" rx="13" class="inset"/>
+  <text x="600" y="575" class="mono">pm enable</text>
+  <text x="600" y="600" class="small">restore stock Home</text>
+  <text x="579" y="713" class="small">No root or firmware flash required.</text>
+
+  <rect x="908" y="240" width="460" height="518" rx="22" class="panel"/>
+  <text x="938" y="288" class="heading">TV packages and services</text>
+  <rect x="936" y="315" width="404" height="124" rx="15" class="inset"/>
+  <text x="959" y="349" class="heading">Aqua TV Home</text>
+  <text x="959" y="377" class="small">com.gathin.tvhome</text>
+  <text x="959" y="406" class="body">App grid, dock and Home activity</text>
+  <rect x="936" y="456" width="404" height="124" rx="15" class="inset"/>
+  <text x="959" y="491" class="heading">Widgets build</text>
+  <text x="959" y="520" class="body">Prayer, weather and AQI cards</text>
+  <text x="959" y="548" class="body">ClockDream and Adzan scheduler</text>
+  <rect x="936" y="597" width="404" height="124" rx="15" class="inset"/>
+  <text x="959" y="632" class="heading">Stock launcher</text>
+  <text x="959" y="661" class="body">Kept installed; may be disabled for user 0</text>
+  <text x="959" y="690" class="small">Re-enabled by default / restore.</text>
+
+  <path d="M496 389H542" class="flow"/>
+  <path d="M852 389H898" class="flow"/>
+  <path d="M908 694H870V800H284V768" class="flow"/>
+  <text x="573" y="791" class="small">Backup capture / restore commands flow through ADB</text>
+  <text x="72" y="821" class="small">Recovery requires a usable backup or stock package and continued device access.</text>
+</svg>

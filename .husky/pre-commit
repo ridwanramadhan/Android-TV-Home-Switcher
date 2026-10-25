@@ -1,0 +1,2 @@
+npx --no-install lint-staged
+bash -n switch.sh backup.sh restore.sh build.sh
