@@ -5,6 +5,30 @@
     android:layout_height="match_parent"
     android:background="#FF000000">
 
+    <ImageView
+        android:id="@+id/dreamMosqueCurrent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/dreamMosqueNext"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
+    <View
+        android:id="@+id/dreamMosqueScrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/dream_mosque_scrim"
+        android:visibility="gone" />
+
     <View
         android:id="@+id/dreamAmbient"
         android:layout_width="match_parent"
@@ -68,5 +92,70 @@
             android:fontFamily="@string/font_regular"
             android:letterSpacing="0.14"
             android:textAllCaps="true" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/dreamMosqueCaption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|right"
+        android:layout_marginLeft="36dp"
+        android:layout_marginRight="36dp"
+        android:layout_marginBottom="36dp"
+        android:orientation="vertical"
+        android:gravity="right"
+        android:importantForAccessibility="noHideDescendants"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/dreamMosqueName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="0dp"
+            android:fontFamily="@font/outfit_medium"
+            android:gravity="right"
+            android:importantForAccessibility="no"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:shadowColor="#CC000000"
+            android:shadowDx="0"
+            android:shadowDy="2"
+            android:shadowRadius="4"
+            android:textColor="#F2FFFFFF"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/dreamMosqueLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:fontFamily="@font/outfit_regular"
+            android:gravity="right"
+            android:importantForAccessibility="no"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:shadowColor="#CC000000"
+            android:shadowDx="0"
+            android:shadowDy="2"
+            android:shadowRadius="4"
+            android:textColor="#D9FFFFFF"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/dreamMosqueCredit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFamily="@font/outfit_regular"
+            android:gravity="right"
+            android:importantForAccessibility="no"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:shadowColor="#CC000000"
+            android:shadowDx="0"
+            android:shadowDy="2"
+            android:shadowRadius="4"
+            android:textColor="#B3FFFFFF"
+            android:textSize="11sp" />
     </LinearLayout>
 </FrameLayout>
