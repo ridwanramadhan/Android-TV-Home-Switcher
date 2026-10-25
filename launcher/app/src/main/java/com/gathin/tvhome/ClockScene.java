@@ -55,6 +55,10 @@ final class ClockScene {
     private Resources wallpaperRes;
     /** Bumped by stop(): a decode started before it finds a different number and drops its result. Main thread only. */
     private int wallpaperGeneration;
+    /** The mosque screensaver gallery, built only for the widgets build when clock_wallpaper is off. */
+    private MosqueGallery mosqueGallery;
+    /** True once useHomeWallpaper selected the gallery; shifts the scene away from the ambient glow. */
+    private boolean useMosqueGallery;
 
     private final Runnable tick = new Runnable() {
         @Override
@@ -99,6 +103,9 @@ final class ClockScene {
     }
 
     void start() {
+        if (useMosqueGallery && mosqueGallery != null) {
+            mosqueGallery.start();
+        }
         content.setAlpha(0f);
         if (dashboard != null && dashboardEnabled) {
             dashboard.setAlpha(0f);
@@ -128,6 +135,9 @@ final class ClockScene {
     }
 
     void stop() {
+        if (useMosqueGallery && mosqueGallery != null) {
+            mosqueGallery.stop();
+        }
         handler.removeCallbacksAndMessages(null);   // the tick and any glow steps still queued
         content.animate().cancel();
         if (dashboard != null) dashboard.animate().cancel();
@@ -151,7 +161,15 @@ final class ClockScene {
             return;
         }
         if (!cfg.clockWallpaper) {
-            // clock_glow false: plain black behind the clock (OLED); the clock itself still moves every minute.
+            // The widgets build plays the mosque gallery here; the plain-black clock_glow=false branch
+            // only applies when the gallery is unavailable (the non-widgets build).
+            if (dashboardEnabled) {
+                useMosqueGallery = true;
+                if (mosqueGallery == null) {
+                    mosqueGallery = new MosqueGallery(content.getRootView(), MosquePhotos.all(), random);
+                }
+                return;
+            }
             if (!cfg.clockGlow) {
                 wallpaperShown = true;   // also stops the glow's colour cycle
                 ambient.setBackground(null);
@@ -264,7 +282,7 @@ final class ClockScene {
     }
 
     private void shiftGlow() {
-        if (wallpaperShown) return;
+        if (wallpaperShown || useMosqueGallery) return;
         int from = glowColor;
         colorIndex = (colorIndex + 1) % PALETTE.length;
         int to = PALETTE[colorIndex];
