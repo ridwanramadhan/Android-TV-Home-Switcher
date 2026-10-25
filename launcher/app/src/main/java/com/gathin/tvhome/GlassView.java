@@ -33,6 +33,7 @@ public class GlassView extends View {
     /** glass_style rim or halo: no sheen and no fill, only the crisp rim (and, for halo, a lighter outer glow). */
     private boolean flat;
     private boolean halo;
+    /** liquid glass rims (glass_style glass or liquid, the default); always assigned by setStyle before drawing. */
     private boolean liquid = true;
 
     public GlassView(Context context, AttributeSet attrs) {
@@ -45,7 +46,8 @@ public class GlassView extends View {
         glow.setStyle(Paint.Style.STROKE);
         liquidRim = new GlassRim(1.5f * density, 0xD9FFFFFF, 0x1AFFFFFF, 0.85f);
         // Cache the slab as a texture. The spring only changes translation, so the GPU can
-        // move it without replaying clipPath and the glow on every frame.
+        // move it without replaying clipPath and the glow on every frame. That path is
+        // software-rendered on the MT5895 and is what makes the highlight crawl.
         setLayerType(LAYER_TYPE_HARDWARE, null);
     }
 
@@ -92,7 +94,9 @@ public class GlassView extends View {
         float inset = 6f * density;   // room for the glow
         rect.set(inset, inset, getWidth() - inset, getHeight() - inset);
 
-        // Outer glow: thin rings across the inset, each a little fainter, so it fades out smoothly.
+        // Outer glow: thin rings across the inset, each a little fainter, so it fades out smoothly. Three wide
+        // strokes left visible bands once the glow took an app's colour at a stronger alpha. The hardware layer
+        // caches the result, so the rings cost one draw, not one per frame of the spring.
         if (!flat || halo) {
             int rings = 12;
             float step = inset / rings;
@@ -106,24 +110,24 @@ public class GlassView extends View {
             }
         }
         if (flat) {
-            if (liquid) {
-                liquidRim.fit(rect);
-                canvas.drawRoundRect(rect, radius, radius, liquidRim.paint);
-            } else {
-                canvas.drawRoundRect(rect, radius, radius, rim);
-            }
+            drawRim(canvas);
             return;
         }
 
         canvas.drawRoundRect(rect, radius, radius, fill);
 
-        // Sheen across the top 45%: clipRect stays on the GPU and
+        // Sheen across the top 45%: clipRect stays on the GPU (clipPath did not on the MT5895) and
         // the round rect under it keeps the top corners rounded with a flat bottom edge.
         canvas.save();
         canvas.clipRect(rect.left, rect.top, rect.right, rect.top + rect.height() * 0.45f);
         canvas.drawRoundRect(rect, radius, radius, specular);
         canvas.restore();
 
+        drawRim(canvas);
+    }
+
+    /** The edge itself: the liquid gradient that tracks the shape, or the plain stroke for rim/halo. */
+    private void drawRim(Canvas canvas) {
         if (liquid) {
             liquidRim.fit(rect);
             canvas.drawRoundRect(rect, radius, radius, liquidRim.paint);

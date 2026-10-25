@@ -24,6 +24,7 @@ CONFIG_XML="$LAUNCHER_DIR/app/src/main/res/values/config.xml"
 
 info() { printf '\033[34m==>\033[0m %s\n' "$*"; }
 ok()   { printf '\033[32m[ok]\033[0m %s\n' "$*"; }
+warn() { printf '\033[33m[!]\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
 
 usage() {
@@ -91,17 +92,44 @@ find_sdk() {
 }
 
 find_gradle() {
-  local cached
-  cached="$(find "$HOME/.gradle/wrapper/dists" -name gradle -type f -perm +111 2>/dev/null | grep "gradle-8" | sort -r | head -n 1 || true)"
-  if [[ -n "$cached" && -x "$cached" ]]; then
-    printf '%s\n' "$cached"
+  # The wrapper pins the exact Gradle version and verifies its checksum, so it wins
+  # over any system or cached Gradle installation.
+  local wrapper="$LAUNCHER_DIR/gradlew"
+  if [[ -x "$wrapper" ]]; then
+    printf '%s\n' "$wrapper"
     return 0
   fi
   if command -v gradle >/dev/null 2>&1; then
+    warn "Gradle wrapper missing at $wrapper; falling back to system gradle."
     command -v gradle
     return 0
   fi
-  printf '%s\n' "./gradlew"
+  die "Gradle not found. Restore launcher/gradlew or install Gradle 8.x."
+}
+
+# Rewrite dashboard_panels with a temp file: 'sed -i' is BSD-only and breaks on Linux.
+set_dashboard_panels() {
+  local enable="$1" tmp replacement pattern
+  tmp="$(mktemp "${TMPDIR:-/tmp}/config.xml.XXXXXX")"
+  replacement="<bool name=\"dashboard_panels\">$enable</bool>"
+  pattern="s|<bool name=\"dashboard_panels\">.*</bool>|$replacement|"
+  if ! sed "$pattern" "$CONFIG_XML" > "$tmp"; then
+    rm -f "$tmp"
+    die "Failed to update dashboard_panels in $CONFIG_XML."
+  fi
+  mv "$tmp" "$CONFIG_XML"
+}
+
+# build_variant flips config.xml; always put the original back, even on failure or after 'all'.
+CONFIG_BACKUP=""
+restore_config() {
+  if [[ -n "$CONFIG_BACKUP" && -f "$CONFIG_BACKUP" ]]; then
+    if ! cp -p "$CONFIG_BACKUP" "$CONFIG_XML"; then
+      warn "Could not restore $CONFIG_XML from $CONFIG_BACKUP."
+    fi
+    rm -f "$CONFIG_BACKUP"
+    CONFIG_BACKUP=""
+  fi
 }
 
 build_variant() {
@@ -111,7 +139,7 @@ build_variant() {
   local enable_dash="$4"
 
   info "Configuring launcher for: $mode (dashboard_panels=$enable_dash)"
-  sed -i '' "s|<bool name=\"dashboard_panels\">.*</bool>|<bool name=\"dashboard_panels\">$enable_dash</bool>|" "$CONFIG_XML"
+  set_dashboard_panels "$enable_dash"
 
   info "Compiling $mode release APK..."
   (
@@ -138,8 +166,21 @@ build_variant() {
 MODE="${1:-}"
 [[ -n "$MODE" ]] || { usage; exit 2; }
 
+case "$MODE" in
+  -h|--help|help)
+    usage
+    exit 0
+    ;;
+esac
+
 DETECTED_JAVA="$(find_java)"
 DETECTED_SDK="$(find_sdk)"
+
+# Snapshot config.xml before any variant flips it, and restore it via the EXIT trap.
+CONFIG_BACKUP="$(mktemp "${TMPDIR:-/tmp}/config.xml.orig.XXXXXX")"
+cp -p "$CONFIG_XML" "$CONFIG_BACKUP"
+trap restore_config EXIT
+trap 'exit 130' INT TERM
 
 case "$MODE" in
   glass|glass-fresh|fresh)
@@ -151,10 +192,6 @@ case "$MODE" in
   all)
     build_variant "glass-fresh" "$APKS_DIR/glass-tv-fresh.apk" "$APKS_DIR/aqua-tv-home-fresh.apk" "false"
     build_variant "glass-widgets" "$APKS_DIR/glass-tv-widgets.apk" "$APKS_DIR/aqua-tv-home-widgets.apk" "true"
-    ;;
-  -h|--help|help)
-    usage
-    exit 0
     ;;
   *)
     die "Unknown build mode '$MODE'. Available: glass, glass-widgets, fresh, widgets, all."

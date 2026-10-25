@@ -40,7 +40,7 @@
     <string name="stats_storage">Storage %1$s free</string>
     <string name="storage_gb_whole">%1$.0f GB</string>
     <string name="storage_gb_decimal">%1$.1f GB</string>
-    <string name="dream_name">Clock</string>
+    <string name="dream_name">Aqua TV Home Clock</string>
     <string name="vpn">VPN</string>
     <string name="vpn_off">VPN off</string>
     <string name="home_settings">Choose default home</string>
@@ -149,11 +149,17 @@
          last opened, e.g. "5 minutes ago" or "yesterday, 9:40 pm". -->
     <string name="last_opened">Last opened %1$s</string>
 
-    <!-- Fullscreen Adzan prayer call -->
-    <string name="adzan_prayer_time">Waktu Sholat %1$s Telah Tiba</string>
-    <string name="adzan_title_default">Waktu Sholat Telah Tiba</string>
-    <string name="adzan_subtitle">Upin &amp; Ipin — Laungan Azan</string>
-    <string name="adzan_dismiss">Tutup Adzan</string>
-    <string name="adzan_keep_screen">Tetap Tampilkan</string>
-    <string name="adzan_hint_remote">Tekan KEMBALI untuk menutup</string>
+    <!-- Fullscreen Adzan prayer call. The glyph is inside the string so a translation can drop it.
+         %1$s is the prayer's name, e.g. Maghrib. -->
+    <string name="adzan_prayer_time">🕌 %1$s prayer time</string>
+    <string name="adzan_title_default">🕌 Prayer time</string>
+    <!-- The recording's own title, a proper name, so it is the same in every language. -->
+    <string name="adzan_subtitle" translatable="false">Upin &amp; Ipin — Laungan Azan</string>
+    <string name="adzan_dismiss">Close adzan</string>
+    <string name="adzan_keep_screen">Keep on screen</string>
+    <string name="adzan_hint_remote">Press BACK to close</string>
+    <!-- The alarm notification: its channel, and the line under the title. -->
+    <string name="adzan_channel_name">Prayer times &amp; adzan</string>
+    <string name="adzan_channel_description">Announces each prayer time</string>
+    <string name="adzan_notification_body">The call to prayer is playing</string>
 </resources>

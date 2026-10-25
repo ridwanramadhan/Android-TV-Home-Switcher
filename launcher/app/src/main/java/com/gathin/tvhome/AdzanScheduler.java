@@ -11,30 +11,35 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
- * Schedules exact Android OS alarms for upcoming prayer times (Subuh, Dzuhur, Ashar, Maghrib, Isya)
- * so Adzan can trigger reliably even when the TV is on screensaver or playing Netflix / Disney+.
+ * Schedules one exact OS alarm for the next call to prayer, so the Adzan still fires when the TV is on the
+ * screensaver or another app is in front and this process may be asleep.
+ *
+ * <p>The alarm is deliberately one-shot: AdzanReceiver re-arms the following one after each call, and a
+ * reboot or clock change re-arms it too. A repeating alarm would drift against a schedule that changes daily.
  */
 public final class AdzanScheduler {
     private static final String TAG = "AdzanScheduler";
     private static final int REQUEST_CODE = 8801;
 
+    private AdzanScheduler() {
+    }
+
+    /**
+     * Arms the next call. Does nothing on a build without the dashboard panels: {@code dashboard_panels}
+     * is the build-wide switch for the widgets, the Adzan panel among them, so a fresh-mode APK sets no alarm.
+     */
     public static void scheduleNextPrayer(Context context) {
         if (context == null) return;
-
         Context appCtx = context.getApplicationContext();
-        boolean enabled = false;
-        try {
-            enabled = appCtx.getResources().getBoolean(R.bool.dashboard_panels);
-        } catch (Exception ignored) {
-        }
-        if (!enabled) {
+
+        if (!panelsEnabled(appCtx)) {
             cancelAlarm(appCtx);
             return;
         }
 
         List<DashboardSnapshot.Prayer> prayers = DashboardRepository.getCachedPrayers(appCtx);
         if (prayers == null || prayers.isEmpty()) {
-            // If cache not populated yet, load from repository
+            // Nothing cached yet (a cold boot): fetch once, which calls back into this method when it lands.
             try {
                 new DashboardRepository(appCtx).load(snap -> {
                     if (snap != null && snap.prayers != null && !snap.prayers.isEmpty()) {
@@ -47,38 +52,8 @@ public final class AdzanScheduler {
             return;
         }
 
-        ZonedDateTime now = ZonedDateTime.now();
-        DashboardSnapshot.Prayer nextPrayer = null;
-        ZonedDateTime nextPrayerTime = null;
-
-        for (DashboardSnapshot.Prayer p : prayers) {
-            if (p.name.equalsIgnoreCase("Imsak") || p.name.equalsIgnoreCase("Syuruq")
-                    || p.name.equalsIgnoreCase("Sunrise")) {
-                continue;
-            }
-            ZonedDateTime pTime = now.with(p.time).withSecond(0).withNano(0);
-            if (pTime.isAfter(now)) {
-                if (nextPrayerTime == null || pTime.isBefore(nextPrayerTime)) {
-                    nextPrayer = p;
-                    nextPrayerTime = pTime;
-                }
-            }
-        }
-
-        // If all prayers for today passed, schedule for first prayer tomorrow
-        if (nextPrayer == null) {
-            for (DashboardSnapshot.Prayer p : prayers) {
-                if (p.name.equalsIgnoreCase("Imsak") || p.name.equalsIgnoreCase("Syuruq")
-                        || p.name.equalsIgnoreCase("Sunrise")) {
-                    continue;
-                }
-                nextPrayer = p;
-                nextPrayerTime = now.plusDays(1).with(p.time).withSecond(0).withNano(0);
-                break;
-            }
-        }
-
-        if (nextPrayer == null || nextPrayerTime == null) {
+        PrayerTimes.Occurrence next = PrayerTimes.next(prayers, ZonedDateTime.now());
+        if (next == null) {
             Log.w(TAG, "No valid prayer times available to schedule");
             return;
         }
@@ -88,50 +63,61 @@ public final class AdzanScheduler {
 
         Intent intent = new Intent(appCtx, AdzanReceiver.class);
         intent.setAction(AdzanReceiver.ACTION_ADZAN_ALARM);
-        intent.putExtra(AdzanReceiver.EXTRA_PRAYER_NAME, nextPrayer.name);
-
+        intent.putExtra(AdzanReceiver.EXTRA_PRAYER_NAME, next.name());
         PendingIntent pi = PendingIntent.getBroadcast(
                 appCtx,
                 REQUEST_CODE,
                 intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        long triggerMs = nextPrayerTime.toInstant().toEpochMilli();
+        long triggerMs = next.at.toInstant().toEpochMilli();
+
+        // Android 12+ can withhold exact alarms (the user or the OEM can revoke the grant). Say so once in the
+        // log rather than silently arming an inexact one: the call would then fire minutes late.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !am.canScheduleExactAlarms()) {
+            Log.w(TAG, "Exact alarms are not permitted; the adzan may fire late");
+        }
+
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMs, pi);
-            } else {
-                am.setExact(AlarmManager.RTC_WAKEUP, triggerMs, pi);
-            }
-            Log.i(TAG, "Successfully scheduled next Adzan alarm: " + nextPrayer.name + " at " + nextPrayerTime);
+            // minSdk is 26, so the exact variant exists on every supported device; no inexact fallback branch.
+            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMs, pi);
+            Log.i(TAG, "Scheduled next Adzan alarm: " + next.name() + " at " + next.at);
         } catch (SecurityException se) {
-            Log.w(TAG, "Exact alarm permission restricted, falling back to standard alarm", se);
+            Log.w(TAG, "Exact alarm permission restricted, falling back to a standard alarm", se);
             am.set(AlarmManager.RTC_WAKEUP, triggerMs, pi);
         } catch (Exception e) {
             Log.e(TAG, "Failed to set alarm", e);
         }
     }
 
+    private static boolean panelsEnabled(Context appCtx) {
+        try {
+            return appCtx.getResources().getBoolean(R.bool.dashboard_panels);
+        } catch (Exception e) {
+            Log.w(TAG, "dashboard_panels is missing from this build", e);
+            return false;
+        }
+    }
+
+    /** Drops the pending call; used by a fresh-mode build and before re-arming. */
     public static void cancelAlarm(Context context) {
         if (context == null) return;
         try {
             AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            if (am != null) {
-                Intent intent = new Intent(context, AdzanReceiver.class);
-                intent.setAction(AdzanReceiver.ACTION_ADZAN_ALARM);
-                PendingIntent pi = PendingIntent.getBroadcast(
-                        context,
-                        REQUEST_CODE,
-                        intent,
-                        PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE
-                );
-                if (pi != null) {
-                    am.cancel(pi);
-                    pi.cancel();
-                }
+            if (am == null) return;
+            Intent intent = new Intent(context, AdzanReceiver.class);
+            intent.setAction(AdzanReceiver.ACTION_ADZAN_ALARM);
+            PendingIntent pi = PendingIntent.getBroadcast(
+                    context,
+                    REQUEST_CODE,
+                    intent,
+                    PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
+            if (pi != null) {
+                am.cancel(pi);
+                pi.cancel();
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            Log.w(TAG, "Could not cancel the adzan alarm", e);
         }
     }
 }

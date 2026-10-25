@@ -1,5 +1,6 @@
 package com.gathin.tvhome;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
@@ -60,22 +61,11 @@ final class DashboardSnapshot {
         return "Hazardous";
     }
 
+    /** The countdown card's "next prayer": which one and how many minutes away; see PrayerTimes.next. */
     static NextPrayer nextPrayer(List<Prayer> prayers, ZonedDateTime now) {
-        if (prayers == null || prayers.isEmpty()) return null;
-        // Imsak and sunrise are shown in the schedule but are not prayer starts.
-        for (Prayer prayer : prayers) {
-            if (prayer.name.equals("Imsak") || prayer.name.equals("Syuruq")) continue;
-            ZonedDateTime at = now.toLocalDate().atTime(prayer.time).atZone(now.getZone());
-            if (at.isAfter(now)) return new NextPrayer(prayer.name,
-                    Math.max(1, (java.time.Duration.between(now, at).toMillis() + 59_999) / 60_000));
-        }
-        for (Prayer prayer : prayers) {
-            if (prayer.name.equals("Subuh")) {
-                ZonedDateTime at = now.toLocalDate().plusDays(1).atTime(prayer.time).atZone(now.getZone());
-                return new NextPrayer(prayer.name,
-                        Math.max(1, (java.time.Duration.between(now, at).toMillis() + 59_999) / 60_000));
-            }
-        }
-        return null;
+        PrayerTimes.Occurrence next = PrayerTimes.next(prayers, now);
+        if (next == null) return null;
+        long minutes = Math.max(1, (Duration.between(now, next.at).toMillis() + 59_999) / 60_000);
+        return new NextPrayer(next.name(), minutes);
     }
 }

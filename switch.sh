@@ -404,14 +404,27 @@ launch_home() {
 }
 
 verify_home() {
-  local expected="$1" home
+  local expected="$1" required="${2:-0}" home i
   [[ "$DRY_RUN" == "1" ]] && return 0
 
-  home="$(resolve_home || true)"
+  for i in 1 2 3; do
+    home="$(resolve_home || true)"
+    case "$home" in
+      "$expected"/*)
+        ok "Home now resolves to $home"
+        return 0
+        ;;
+    esac
+    if (( i < 3 )); then
+      sleep 1
+    fi
+  done
+
+  if [[ "$required" == "1" ]]; then
+    warn "Home resolves to ${home:-nothing}, expected ${expected}/..."
+    return 1
+  fi
   case "$home" in
-    "$expected"/*)
-      ok "Home now resolves to $home"
-      ;;
     "")
       warn "Could not verify the current Home activity."
       ;;
@@ -419,6 +432,7 @@ verify_home() {
       warn "Home resolves to $home. (On some Google TV devices, press HOME on the remote and pick 'Always')."
       ;;
   esac
+  return 0
 }
 
 switch_stock() {
@@ -462,7 +476,8 @@ switch_aqua() {
     run_adb install -r -d -g "$apk"
     run_adb shell "pm enable --user 0 $LAUNCHER_PACKAGE"
     run_adb shell "pm grant $LAUNCHER_PACKAGE android.permission.ACCESS_FINE_LOCATION"
-    run_adb shell "appops set $LAUNCHER_PACKAGE SYSTEM_ALERT_WINDOW allow" >/dev/null 2>&1 || true
+    # Background-activity-start exemption: lets the alarm receiver open Adzan over Netflix.
+    run_adb shell "appops set $LAUNCHER_PACKAGE SYSTEM_ALERT_WINDOW allow"
   else
     out="$(run_adb install -r -d -g "$apk" 2>&1 || true)"
     printf '%s\n' "$out" | sed 's/^/  /'
@@ -495,6 +510,7 @@ switch_aqua() {
       printf '%s\n' "$out" | sed 's/^/  /'
     fi
     run_adb shell "pm grant $LAUNCHER_PACKAGE android.permission.ACCESS_FINE_LOCATION" >/dev/null 2>&1 || true
+    # Background-activity-start exemption: lets the alarm receiver open Adzan over Netflix.
     run_adb shell "appops set $LAUNCHER_PACKAGE SYSTEM_ALERT_WINDOW allow" >/dev/null 2>&1 || true
     run_adb shell "am force-stop $LAUNCHER_PACKAGE" >/dev/null 2>&1 || true
   fi
@@ -502,9 +518,17 @@ switch_aqua() {
   set_home "$LAUNCHER_ACTIVITY"
   launch_home "$LAUNCHER_ACTIVITY"
 
-  # Disable stock launcher so remote HOME button routes to Aqua TV Home
+  # Never disable the stock launcher until the new Home is actually active, otherwise the
+  # TV could be left with no working Home at all.
+  if ! verify_home "$LAUNCHER_PACKAGE" 1; then
+    warn "Re-enabling $STOCK_PACKAGE so the TV keeps a working Home."
+    run_adb shell "pm enable --user 0 $STOCK_PACKAGE" >/dev/null 2>&1 || true
+    die "Home did not switch to $LAUNCHER_PACKAGE. The TV was left on $STOCK_PACKAGE. Run './switch.sh default' to recover."
+  fi
+
+  # Verified: now disable stock launcher so the remote HOME button routes to Aqua TV Home
   if [[ -n "${STOCK_PACKAGE:-}" && "$STOCK_PACKAGE" != "$LAUNCHER_PACKAGE" ]]; then
-    info "Setting remote HOME button to Aqua (disabling $STOCK_PACKAGE for user 0)..."
+    info "Home verified; setting remote HOME button to Aqua (disabling $STOCK_PACKAGE for user 0)..."
     if [[ "$DRY_RUN" == "1" ]]; then
       run_adb shell "pm disable-user --user 0 $STOCK_PACKAGE"
       run_adb shell "settings put secure enabled_accessibility_services com.gathin.tvhome/.HomeKeyService"
@@ -515,8 +539,6 @@ switch_aqua() {
       run_adb shell "settings put secure accessibility_enabled 1" >/dev/null 2>&1 || true
     fi
   fi
-
-  verify_home "$LAUNCHER_PACKAGE"
 }
 
 has_pkg() {

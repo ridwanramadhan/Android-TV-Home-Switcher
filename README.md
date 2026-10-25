@@ -13,6 +13,19 @@ Switch an Android TV or Google TV between its stock Home screen and **Aqua TV Ho
 
 The TV launcher artwork used by Android is [a separate 320×180 banner](launcher/app/src/main/res/drawable-nodpi/banner.jpg).
 
+## Features
+
+- **Liquid Glass throughout.** The focus slab, the information cards and the dock share one edge treatment: a diagonal specular highlight that catches the top-left and bottom-right of each shape, a soft ambient glow, and a selection that glides between tiles on a spring instead of jumping.
+- **Two styles from the same source.** _Fresh_ is the clean Apple TV-style grid with a five-slot dock and no cards. _Widgets_ adds the digital clock and the three information cards.
+- **Three live cards.**
+  - **Prayer times** — the seven slots the feed returns (Imsak, Subuh, Syuruq, Dzuhur, Ashar, Maghrib, Isya) with a countdown pill to the next call.
+  - **Weather** — current temperature and condition, today's high and low, and a five-hour strip.
+  - **Air quality** — a US AQI ring with the band name (Good, Moderate, Sensitive groups, Unhealthy, and so on).
+- **ClockDream screensaver.** The large clock and date, the same three cards, and gentle OLED burn-in protection: the clock drifts a few pixels every minute, and the coloured glow can be replaced by your wallpaper or plain black.
+- **Adzan over whatever is playing.** One exact alarm per prayer opens a full-screen 1080p video with audio, from Home, from the screensaver, or while a streaming app is in front. Back or the on-screen button closes it and returns you to the app underneath.
+- **Reversible.** The stock launcher stays installed and is only disabled once the new Home is confirmed, and `default` puts it back. Nothing is flashed and nothing is uninstalled for you.
+- **Small and quiet.** R8 shrinking, hardware-decoded video, no web views and no analytics. The launcher talks to AlAdhan and Open-Meteo for the cards and to nothing else.
+
 ## Requirements
 
 - An Android TV or Google TV device running **Android 8.0 / API 26 or newer**. OEM behavior varies; a supported API level does not guarantee that a TV permits changing Home.
@@ -45,6 +58,13 @@ The first switch creates a baseline snapshot in `backups/` unless `--no-backup` 
 
 Use `./switch.sh list` or `./switch.sh --help` for shell aliases and options. In PowerShell, use `.\switch.ps1 -Help`.
 
+## How the remote works
+
+- **HOME** opens Aqua TV Home. The switch selects it as the default Home and disables the stock launcher for user 0, so the remote cannot quietly fall back to the factory screen. It also points the remote's Home key at the launcher through the bundled accessibility service.
+- **BACK** inside an app behaves as that app decides: most streaming apps leave to Home, some keep their own previous screen. The launcher does not intercept Back.
+- **Switching back** with `./switch.sh default` re-enables the stock launcher, and HOME behaves exactly as it did before.
+- The launcher's dialogs, tile menu and reordering are all driven from the D-pad: arrows move, OK selects, Back closes.
+
 ## Modes and data
 
 | Mode                        | APK                         | Features                                                       |
@@ -53,9 +73,19 @@ Use `./switch.sh list` or `./switch.sh --help` for shell aliases and options. In
 | `glass-widgets` / `widgets` | `apks/glass-tv-widgets.apk` | Dashboard cards, clock screensaver, and scheduled Adzan player |
 | `default` / `stock`         | None                        | Re-enables and selects the detected stock launcher             |
 
-The widgets build reads the TV's location when available. Prayer times come from AlAdhan; weather and US AQI come from Open-Meteo. If location is unavailable, the code uses a fallback in East Jakarta. These cards require network access and may be empty or stale offline. Adzan playback depends on the TV's alarm, overlay, and activity behavior, so test it on your device before relying on it.
+The widgets build reads the TV's location when available. Prayer times come from [AlAdhan](https://aladhan.com/) using the Kemenag calculation method; weather and US AQI come from [Open-Meteo](https://open-meteo.com/). If location is unavailable, the code uses a fallback in East Jakarta. These cards require network access and may be empty or stale offline.
 
-The launcher also provides a `ClockDream` screensaver service. Select **Aqua TV Home** in the TV's screensaver settings if your firmware exposes that option.
+Adzan is scheduled with one exact OS alarm per prayer. If Android or the OEM withholds exact alarms, the call can fire late; the app logs this rather than pretending it is exact. Playback depends on the TV's alarm and activity behavior, so test it on your device before relying on it. The switchers grant `SYSTEM_ALERT_WINDOW`, which the launcher never draws with: it is the exemption that lets the alarm open the call to prayer while another app is in front.
+
+The launcher also provides a `ClockDream` screensaver service. Select **Aqua TV Home Clock** in the TV's screensaver settings if your firmware exposes that option.
+
+### What the Adzan does, and what it does not
+
+- Both videos are 1920×1080 H.264 with AAC audio: the standard call runs 3:20 and the Subuh call runs 3:51. Sources and credits are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+- The alarm is one-shot and is re-armed after each call, on boot, and when the clock or time zone changes.
+- The call opens a full-screen activity and takes the audio focus, so Android pauses the app underneath. Closing the call returns you to that app; whether it resumes playback by itself is up to that app, not something the launcher can force.
+- Back, the on-screen Close button, or the end of the video all end the call. If a system dialog or the keyguard interrupts it, playback pauses and resumes rather than dying.
+- If the notification permission is refused on Android 13+, the alarm still opens the call directly; only the notification is skipped.
 
 ## Configuration and privacy
 
@@ -74,13 +104,73 @@ The widgets build sends location coordinates to AlAdhan and Open-Meteo to obtain
 
 ## Backup and recovery
 
-`switch.sh` detects the stock Home, creates a backup on the computer, installs the chosen APK, selects it as Home, and may disable the stock launcher **for user 0**. It does not uninstall the stock launcher. [The architecture diagram](docs/architecture.svg) shows the switch and restore path.
+`switch.sh` detects the stock Home, creates a backup on the computer, installs the chosen APK, and selects it as Home. Only after the new Home is confirmed to resolve does it disable the stock launcher **for user 0**; if the install or the switch fails, the stock launcher is left enabled and the script stops. It does not uninstall the stock launcher. [The architecture diagram](docs/architecture.svg) shows the switch and restore path.
 
 ![Computer, ADB, TV, and local backup architecture](docs/architecture.svg)
 
-To return to the factory Home choice, run `./switch.sh default` or `.\switch.ps1 default`. To restore package state captured in a backup, run `./switch.sh restore` or `.\switch.ps1 restore`. The shell backup tool also writes a restore script inside each backup folder. Run `./switch.sh backup` to make another snapshot before experimenting.
+To return to the factory Home choice, run `./switch.sh default` or `.\switch.ps1 default`. To restore package state captured in a backup, run `./switch.sh restore` or `.\switch.ps1 restore`; both read the newest folder under `backups/`, re-enable the packages recorded there, and put the stock Home back. The shell backup tool also writes a restore script inside each backup folder. Run `./switch.sh backup` to make another snapshot before experimenting.
 
-Recovery depends on the stock package still being present, the backup being usable, and ADB remaining accessible. If Home will not open, use the TV's Settings app to re-enable the stock launcher or remove Aqua TV Home if the firmware permits it. Consult the manufacturer's recovery steps if those controls are unavailable.
+Recovery depends on the stock package still being present, the backup being usable, and ADB remaining accessible. Uninstalling the launcher without running `./switch.sh default` first does **not** bring the stock Home back: the switch disables the stock launcher, so re-enable it over ADB (`pm enable --user 0 <stock package>`) or from the TV's Settings before removing Aqua TV Home. If Home will not open, use the TV's Settings app to re-enable the stock launcher. Consult the manufacturer's recovery steps if those controls are unavailable.
+
+## FAQ
+
+### It says `Could not connect` or `Connection refused`
+
+Check that **Network debugging** (or USB debugging) is still on in Developer options, that the TV is awake, and that the IP has not changed. `./switch.sh status <ip>` says which of those is failing.
+
+### It says `unauthorized`
+
+Look at the TV: accept the **Allow USB debugging?** prompt and tick _Always allow from this computer_. Then rerun the command.
+
+### It says `adb was not found`
+
+Install Android platform-tools and make sure `adb` is on `PATH`, or set `ADB_PATH` in `.env`.
+
+```powershell
+winget install Google.PlatformTools   # Windows
+```
+
+```bash
+brew install android-platform-tools   # macOS
+```
+
+### Google TV asks "Complete action using…" when I press HOME
+
+That is the system's launcher picker, not an error. Select **Aqua TV Home** and choose **Always**. If the picker keeps appearing, run `./switch.sh status` to see whether the stock launcher is still the selected Home.
+
+### Where do the prayer times, weather and air quality come from?
+
+The widgets build asks the TV for its location and then queries AlAdhan (Kemenag method) for prayer times and Open-Meteo for weather and US AQI. Without a location fix it falls back to East Jakarta coordinates, which you can change in `DashboardRepository.java`.
+
+### How do I enable the screensaver?
+
+In **Settings → System → Screensaver** (or _Device Preferences → Screensaver_) pick **Aqua TV Home Clock**. Over ADB, the equivalent is:
+
+```bash
+adb shell settings put secure screensaver_components com.gathin.tvhome/.ClockDream
+```
+
+On an OLED panel, set `clock_glow` to `false` in [config.xml](launcher/app/src/main/res/values/config.xml) for a plain black background with the same drift.
+
+### How does the Adzan behave while a movie is playing?
+
+The alarm opens the full-screen call on top of the app; Android pauses that app while the call has the screen. Closing the call returns you to it. The launcher cannot force another app to resume playback, so what happens next is that app's own behaviour.
+
+### The Adzan fired late
+
+The call needs exact alarms. On Android 12+ the grant can be withheld by the OEM or the user: check **Settings → Apps → Special app access → Alarms & reminders** for Aqua TV Home, and note that the launcher logs when its exact alarm request was downgraded.
+
+### What are the Adzan videos?
+
+Both are 1080p H.264/AAC and ship inside the APK (about 45 MB of its size): the standard call is 3:20 and the Subuh call is 3:51. Attribution for both is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+### Why is the APK so large?
+
+Almost all of it is the two videos. If you do not want the Adzan, build the fresh variant, which keeps the videos out of the dashboard path — the assets themselves are still bundled, so a smaller build means removing `res/raw/adzan*.mp4` from a local fork.
+
+### Can I go back to the factory screen without a computer?
+
+Only if the stock launcher is still enabled. Run `./switch.sh default` first (from any machine with adb), or use **Settings → Apps → Aqua TV Home** to re-enable the stock launcher before uninstalling. Uninstalling first leaves the TV without a Home screen.
 
 ## Troubleshooting
 
@@ -105,11 +195,45 @@ The Android app uses Java 17, Android Gradle Plugin 8.5.2, Gradle wrapper 8.14, 
 # or ./build.sh all
 ```
 
-`build.sh` updates `launcher/app/src/main/res/values/config.xml` to select a mode, builds the APK, and copies it to `apks/`. Review the working tree before committing after a build. To run JVM unit tests directly:
+`build.sh` flips the `dashboard_panels` flag in [config.xml](launcher/app/src/main/res/values/config.xml) to select a mode, builds the APK, copies it to `apks/`, and puts `config.xml` back afterwards. To run JVM unit tests directly:
 
 ```bash
 cd launcher
 ./gradlew :app:testDebugUnitTest
+```
+
+### Android TV OS compatibility
+
+| Android version         | API   | Stock launcher                         | Notes                                                        |
+| ----------------------- | ----- | -------------------------------------- | ------------------------------------------------------------ |
+| 8.0 – 8.1 (Oreo)        | 26–27 | `com.google.android.tvlauncher`        | Works; both switchers fall back to `pm set-home-activity`    |
+| 9 (Pie) – 10 (Q)        | 28–29 | `com.google.android.tvlauncher`        | Works                                                        |
+| 11 (R)                  | 30    | `tvlauncher` or `tv.launcherx`         | Works; OEM firmware differences show up most at this version |
+| 12 – 12L (S)            | 31–32 | `com.google.android.apps.tv.launcherx` | Works; exact-alarm permission can be withheld                |
+| 13 (Tiramisu)           | 33    | `com.google.android.apps.tv.launcherx` | Works; notification permission is optional                   |
+| 14 (Upside Down Cake)   | 34    | `com.google.android.apps.tv.launcherx` | Works; install falls back to a shell push when needed        |
+| 6 – 7.1 (pre-Android 8) | ≤ 25  | Legacy AOSP / Leanback                 | Requires lowering `minSdk` in `launcher/app/build.gradle`    |
+
+A supported API level is not a guarantee: some OEM firmwares forbid changing Home, and no script can override that.
+
+### Repository structure
+
+```
+androidtv-switcher-launcher/
+├── switch.sh                  # macOS/Linux switcher (glass, glass-widgets, default, status, backup, restore)
+├── switch.ps1                 # Windows PowerShell switcher, same modes
+├── switch.bat                 # Windows double-click wrapper for switch.ps1
+├── backup.sh                  # Standalone backup: packages, settings, home candidates, stock APK
+├── restore.sh                 # Restores the newest backup by running its generated restore script
+├── build.sh                   # Rebuilds the fresh and widgets APKs from source
+├── docs/                      # Screenshots, banner and architecture diagram
+├── apks/                      # Compiled release APKs and their SHA256SUMS
+├── backups/                   # Local TV snapshots (git-ignored)
+├── .env.example               # Configuration template
+└── launcher/                  # Android Gradle project: Java 17, AGP 8.5.2, minSdk 26
+    └── app/src/main/
+        ├── java/com/gathin/tvhome/   # Home, dashboard, adzan, screensaver, theming
+        └── res/                      # Layouts, strings in 24 languages, config.xml, media
 ```
 
 | Path                                                                                              | Purpose                                          |
@@ -117,6 +241,8 @@ cd launcher
 | [switch.sh](switch.sh), [switch.ps1](switch.ps1)                                                  | Connect, install, select Home, and report status |
 | [backup.sh](backup.sh), [restore.sh](restore.sh)                                                  | Snapshot and restore TV package state            |
 | [MainActivity.java](launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java)               | Main launcher activity                           |
+| [PrayerTimes.java](launcher/app/src/main/java/com/gathin/tvhome/PrayerTimes.java)                 | Prayer matching and scheduling rules             |
+| [AdzanActivity.java](launcher/app/src/main/java/com/gathin/tvhome/AdzanActivity.java)             | Full-screen call to prayer host                  |
 | [DashboardRepository.java](launcher/app/src/main/java/com/gathin/tvhome/DashboardRepository.java) | Widget data and fallback location                |
 | [config.xml](launcher/app/src/main/res/values/config.xml)                                         | Build-time widget flag and default dock apps     |
 | [AndroidManifest.xml](launcher/app/src/main/AndroidManifest.xml)                                  | Home, screensaver, services, and permissions     |

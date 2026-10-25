@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status-bar icon for the adzan notification: a crescent, drawn as a filled disc with a second disc cut
+     out of it. Notification small icons must be flat shapes — the launcher banner (a JPEG) is not one. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M15.2,2.6a9.4,9.4 0 1,0 0,18.8 7.6,7.6 0 1,1 0,-18.8z" />
+</vector>

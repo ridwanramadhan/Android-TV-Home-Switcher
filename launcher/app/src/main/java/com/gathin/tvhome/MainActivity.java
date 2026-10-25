@@ -1,5 +1,6 @@
 package com.gathin.tvhome;
 
+import android.annotation.SuppressLint;
 import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
 import android.app.Activity;
@@ -141,6 +142,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private DashboardSnapshot currentSnapshot;
     private AdzanPlayer adzanPlayer;
     private boolean dashboardEnabled;
+    /** `adb shell am broadcast -a com.gathin.tvhome.TEST_ADZAN` plays a call on demand; debug builds only. */
+    private static final String TEST_ADZAN_ACTION = "com.gathin.tvhome.TEST_ADZAN";
     private View ambient;
     private TextView heroName;
     /** The top shelf: heroName, plus the cinematic shelf's "Last opened" line and dock position dots. */
@@ -358,10 +361,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private final BroadcastReceiver timeReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if ("com.gathin.tvhome.TEST_ADZAN".equals(intent.getAction())) {
+            if (TEST_ADZAN_ACTION.equals(intent.getAction())) {
+                // Debug builds only, registered under the same condition below: an installed app must not be
+                // able to pull a full-screen video over the TV.
                 if (adzanPlayer != null) {
-                    String name = intent.getStringExtra("name");
-                    adzanPlayer.play(name != null ? name : "Ashar");
+                    adzanPlayer.play(intent.getStringExtra("name"));
                 }
                 return;
             }
@@ -822,7 +826,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         packageFilter.addAction(Intent.ACTION_PACKAGE_CHANGED);
         packageFilter.addDataScheme("package");
         timeFilter.addAction(Intent.ACTION_TIMEZONE_CHANGED);
-        timeFilter.addAction("com.gathin.tvhome.TEST_ADZAN");
+        if (isDebuggable()) timeFilter.addAction(TEST_ADZAN_ACTION);
         // Registered for the activity's whole life, not only while it is started: an app installed or updated while
         // another app is in front must still mark the tiles stale, or Home would have to rebuild on every return.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -920,13 +924,19 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
     }
 
+    // Pre-33 has no export flag to pass; the only non-system action in the filter is the debug-only
+    // TEST_ADZAN one, so there is nothing to protect there.
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     protected void onStart() {
         super.onStart();
         stopped = false;
         started = true;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(timeReceiver, timeFilter, Context.RECEIVER_NOT_EXPORTED);
+            // A debug build exports the receiver so `adb shell am broadcast -a ...TEST_ADZAN` can reach it;
+            // a release build listens only for the system's clock changes, which need no export.
+            int flags = isDebuggable() ? Context.RECEIVER_EXPORTED : Context.RECEIVER_NOT_EXPORTED;
+            registerReceiver(timeReceiver, timeFilter, flags);
         } else {
             registerReceiver(timeReceiver, timeFilter);
         }
@@ -1157,10 +1167,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (idleClockMs > 0) root.postDelayed(showIdleClock, idleClockMs);
     }
 
+    /** True on a debug build: gates the on-demand Adzan broadcast, which release builds must not expose. */
+    private boolean isDebuggable() {
+        return (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
-        if (adzanPlayer != null) adzanPlayer.stop();
+        if (adzanPlayer != null) adzanPlayer.dismiss();
         if (dashboardRepository != null) dashboardRepository.stop();
         root.removeCallbacks(showIdleClock);
         endReorder();   // Home or another app while reordering keeps the order so far
@@ -1224,7 +1239,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (adzanPlayer != null) adzanPlayer.stop();
+        if (adzanPlayer != null) adzanPlayer.dismiss();
         if (dashboardRepository != null) dashboardRepository.close();
         unregisterReceiver(packageReceiver);
         wallpaperPlayer.close();

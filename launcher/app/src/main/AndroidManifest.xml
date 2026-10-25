@@ -12,8 +12,18 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- No overlay is ever drawn: this permission is what exempts the app from Android 10's ban on starting
+         an activity from the background, which is how AdzanReceiver raises the call to prayer while another
+         app is in front. The switchers grant it with appops, since it is not granted at install. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- The alarm that carries the adzan, and the notification that backs it up when the direct activity
+         start is refused. USE_EXACT_ALARM is granted at install on 13+; SCHEDULE_EXACT_ALARM covers 12. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- Android 13+: without this grant the alarm notification is dropped, and the adzan falls back to the
+         direct activity start. Never requested at runtime; the launcher works either way. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Needed since Android 10 to read the Wi-Fi network name for the network pill. Never requested at
          runtime: build-and-install grants it with pm grant, so lint's Android 12 "ask for COARSE with
          FINE" rule does not apply here. -->
@@ -193,10 +203,11 @@
             android:taskAffinity=""
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
-        <!-- Fullscreen 1080p Adzan Call to Prayer Activity -->
+        <!-- Fullscreen 1080p Adzan Call to Prayer Activity. Not exported: only this app's alarm receiver and
+             Home start it, so no other installed app can pull a full-screen video over the TV. -->
         <activity
             android:name=".AdzanActivity"
-            android:exported="true"
+            android:exported="false"
             android:excludeFromRecents="true"
             android:noHistory="true"
             android:screenOrientation="landscape"

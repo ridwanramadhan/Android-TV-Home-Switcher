@@ -42,7 +42,8 @@ final class ClockScene {
     private final boolean dashboardEnabled;
     private DashboardRepository dashboardRepository;
     private DashboardSnapshot currentSnapshot;
-    private String lastPlayedAdzanKey = "";
+    /** Date + prayer last announced from the screensaver, so a minute of ticks fires one call. */
+    private String lastAnnouncedKey = "";
     private final GradientDrawable glow;
     private int colorIndex;
     private int glowColor;
@@ -248,25 +249,14 @@ final class ClockScene {
     }
 
     private void checkPrayerTime(DashboardSnapshot snap) {
-        if (snap == null || snap.prayers == null || snap.prayers.isEmpty()) return;
+        if (snap == null || snap.prayers == null) return;
         ZonedDateTime now = ZonedDateTime.now();
-        int hour = now.getHour();
-        int min = now.getMinute();
-        String today = now.toLocalDate().toString();
-        for (DashboardSnapshot.Prayer p : snap.prayers) {
-            if (p.name.equalsIgnoreCase("Imsak") || p.name.equalsIgnoreCase("Syuruq")
-                    || p.name.equalsIgnoreCase("Sunrise")) {
-                continue;
-            }
-            if (p.time.getHour() == hour && p.time.getMinute() == min) {
-                String key = today + "_" + p.name;
-                if (!key.equals(lastPlayedAdzanKey)) {
-                    lastPlayedAdzanKey = key;
-                    AdzanActivity.start(content.getContext(), p.name);
-                }
-                break;
-            }
-        }
+        DashboardSnapshot.Prayer due = PrayerTimes.dueAt(snap.prayers, now.toLocalTime());
+        if (due == null) return;
+        String key = PrayerTimes.dailyKey(now.toLocalDate(), due.name);
+        if (key.equals(lastAnnouncedKey)) return;
+        lastAnnouncedKey = key;
+        AdzanActivity.start(content.getContext(), due.name);
     }
 
     private void shiftGlow() {

@@ -13,107 +13,58 @@ import android.view.KeyEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
-import android.widget.TextView;
 
 import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
- * Handles playing the full-screen Adzan video call to prayer with audio when prayer time arrives.
- * Displays a full-screen overlay that blocks the launcher until the user explicitly dismisses it
- * or chooses to keep watching undisturbed.
+ * Plays the full-screen call to prayer: the 1080p video and its audio, started by the alarm receiver, by the
+ * screensaver, or by Home's minute tick.
+ *
+ * <p>This class owns playback and the once-a-day decision; the overlay's views and key handling belong to
+ * {@link AdzanOverlay}, and which prayer is due belongs to {@link PrayerTimes}.
  */
 public final class AdzanPlayer {
     private static final String TAG = "AdzanPlayer";
-    private static final long AUTO_HIDE_DELAY_MS = 6000L;
 
     private final Activity activity;
+    private final AdzanOverlay overlay;
     private final Handler main = new Handler(Looper.getMainLooper());
-
-    private View overlayView;
-    private FullScreenTextureView textureView;
-    private View gradientTop;
-    private View gradientBottom;
-    private View adzanHeader;
-    private TextView adzanTitle;
-    private TextView adzanSubtitle;
-    private View adzanControls;
-    private TextView btnDismiss;
-    private TextView btnKeep;
-    private TextView adzanRemoteHint;
 
     private MediaPlayer mediaPlayer;
     private Surface videoSurface;
     private boolean isShowing;
-    private boolean controlsHidden;
+    /** The last prayer this player announced, as a date + name key, so a minute-long tick fires once. */
     private String lastPlayedKey = "";
     private String currentPrayer = "";
     private Runnable onStateChangeListener;
 
-    private final Runnable autoHideRunnable = this::hideControls;
-
     public AdzanPlayer(Activity activity) {
         this.activity = activity;
+        this.overlay = new AdzanOverlay(activity);
+        this.overlay.setOnDismiss(this::dismiss);
     }
 
+    /** Told whenever the overlay appears or goes away, so a host activity can finish itself. */
     public void setOnStateChangeListener(Runnable listener) {
         this.onStateChangeListener = listener;
     }
 
-    private void ensureViews() {
-        if (overlayView != null) return;
-        overlayView = activity.findViewById(R.id.adzanOverlay);
-        if (overlayView == null) return;
-
-        textureView = overlayView.findViewById(R.id.adzanTextureView);
-        gradientTop = overlayView.findViewById(R.id.adzanGradientTop);
-        gradientBottom = overlayView.findViewById(R.id.adzanGradientBottom);
-        adzanHeader = overlayView.findViewById(R.id.adzanHeader);
-        adzanTitle = overlayView.findViewById(R.id.adzanTitle);
-        adzanSubtitle = overlayView.findViewById(R.id.adzanSubtitle);
-        adzanControls = overlayView.findViewById(R.id.adzanControls);
-        btnDismiss = overlayView.findViewById(R.id.btnDismissAdzan);
-        btnKeep = overlayView.findViewById(R.id.btnKeepAdzan);
-        adzanRemoteHint = overlayView.findViewById(R.id.adzanRemoteHint);
-
-        btnDismiss.setOnClickListener(v -> dismiss());
-        btnKeep.setOnClickListener(v -> hideControls());
-        overlayView.setOnClickListener(v -> {
-            if (controlsHidden) {
-                showControls();
-                scheduleAutoHideControls();
-            }
-        });
-    }
-
     /**
-     * Checks if the current minute coincides with any prayer time.
-     * Fires only once per prayer per day.
+     * Plays the call when the current minute is a prayer's, at most once per prayer per day.
+     * Safe to call every minute; the once-a-day key makes repeats no-ops.
      */
     public synchronized void checkPrayerTime(List<DashboardSnapshot.Prayer> prayers, ZonedDateTime now) {
-        if (prayers == null || prayers.isEmpty() || now == null) return;
-        int currentHour = now.getHour();
-        int currentMinute = now.getMinute();
-        String today = now.toLocalDate().toString();
-
-        for (DashboardSnapshot.Prayer prayer : prayers) {
-            if (prayer.name.equalsIgnoreCase("Imsak") || prayer.name.equalsIgnoreCase("Syuruq")) {
-                continue;
-            }
-            if (prayer.time.getHour() == currentHour && prayer.time.getMinute() == currentMinute) {
-                String key = today + "_" + prayer.name;
-                if (!key.equals(lastPlayedKey)) {
-                    lastPlayedKey = key;
-                    play(prayer.name);
-                }
-                break;
-            }
-        }
+        if (now == null) return;
+        DashboardSnapshot.Prayer due = PrayerTimes.dueAt(prayers, now.toLocalTime());
+        if (due == null) return;
+        String key = PrayerTimes.dailyKey(now.toLocalDate(), due.name);
+        if (key.equals(lastPlayedKey)) return;
+        lastPlayedKey = key;
+        play(due.name);
     }
 
-    /**
-     * Starts fullscreen adzan video & audio playback with interactive HUD controls.
-     */
+    /** Starts the full-screen video and audio for {@code prayerName}; empty means "prayer time" in general. */
     public void play(String prayerName) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             playInternal(prayerName);
@@ -124,68 +75,61 @@ public final class AdzanPlayer {
 
     private void playInternal(String prayerName) {
         try {
-            this.currentPrayer = prayerName != null ? prayerName.trim() : "";
-            ensureViews();
-            if (overlayView == null || textureView == null) {
-                Log.w(TAG, "Adzan overlay views not available");
+            currentPrayer = prayerName == null ? "" : prayerName.trim();
+            if (!overlay.bind()) {
+                Log.w(TAG, "Adzan overlay is not in this activity's layout");
                 return;
             }
 
-            // Synchronously reset previous playback if running
             releasePlayer();
 
-            String titleText = (prayerName != null && !prayerName.trim().isEmpty())
-                    ? activity.getString(R.string.adzan_prayer_time, prayerName)
-                    : activity.getString(R.string.adzan_title_default);
-            if (adzanTitle != null) {
-                adzanTitle.setText("🕌 " + titleText);
-            }
-
+            overlay.setTitle(titleFor(currentPrayer));
             isShowing = true;
-            overlayView.setVisibility(View.VISIBLE);
-            overlayView.bringToFront();
-            overlayView.setAlpha(1f);
+            overlay.show();
 
-            showControls();
-
-            if (textureView.isAvailable()) {
-                startPlaybackOnSurface(textureView.getSurfaceTexture());
+            FullScreenTextureView view = overlay.textureView();
+            if (view.isAvailable()) {
+                startPlaybackOnSurface(view.getSurfaceTexture());
             } else {
-                textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
-                    @Override
-                    public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-                        if (isShowing) {
-                            startPlaybackOnSurface(surface);
-                        }
-                    }
-
-                    @Override
-                    public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-                    }
-
-                    @Override
-                    public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-                        releasePlayer();
-                        return true;
-                    }
-
-                    @Override
-                    public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-                    }
-                });
+                view.setSurfaceTextureListener(surfaceListener);
             }
 
-            if (btnDismiss != null) {
-                btnDismiss.requestFocus();
-            }
-
-            if (onStateChangeListener != null) onStateChangeListener.run();
-            Log.i(TAG, "Playing fullscreen adzan: " + prayerName);
+            notifyStateChanged();
+            Log.i(TAG, "Playing fullscreen adzan: " + currentPrayer);
         } catch (Exception e) {
             Log.e(TAG, "Failed to start adzan playback", e);
             dismiss();
         }
     }
+
+    /** The prayer's name in the title when there is one, the general line otherwise. */
+    private CharSequence titleFor(String prayerName) {
+        return prayerName.isEmpty()
+                ? activity.getString(R.string.adzan_title_default)
+                : activity.getString(R.string.adzan_prayer_time, prayerName);
+    }
+
+    /** The surface arrives after play() when the overlay was hidden; start then, or give up if dismissed. */
+    private final TextureView.SurfaceTextureListener surfaceListener = new TextureView.SurfaceTextureListener() {
+        @Override
+        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+            if (isShowing) startPlaybackOnSurface(surface);
+        }
+
+        @Override
+        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+        }
+
+        @Override
+        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+            releasePlayer();
+            return true;
+        }
+
+        @Override
+        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+        }
+    };
 
     private void startPlaybackOnSurface(SurfaceTexture surfaceTexture) {
         try {
@@ -201,15 +145,13 @@ public final class AdzanPlayer {
                     .build();
             mediaPlayer.setAudioAttributes(attrs);
 
-            int videoRes = R.raw.adzan;
-            if (currentPrayer.equalsIgnoreCase("Subuh") || currentPrayer.equalsIgnoreCase("Fajr")) {
-                videoRes = R.raw.adzan_subuh;
-            }
-
+            int videoRes = PrayerTimes.videoResource(currentPrayer);
             AssetFileDescriptor afd = null;
             try {
                 afd = activity.getResources().openRawResourceFd(videoRes);
             } catch (Exception ignored) {
+                // Raw resources are not always accessible as a file descriptor (compressed assets); the
+                // Uri path below opens them through AssetManager instead.
             }
 
             if (afd != null) {
@@ -224,16 +166,13 @@ public final class AdzanPlayer {
                 Log.i(TAG, "Adzan MediaPlayer prepared, starting playback");
                 if (isShowing) {
                     mp.start();
-                    scheduleAutoHideControls();
+                    overlay.scheduleAutoHide();
                 } else {
                     releasePlayer();
                 }
             });
 
-            mediaPlayer.setOnCompletionListener(mp -> {
-                Log.i(TAG, "Adzan video playback completed (3:20 reached)");
-                dismiss();
-            });
+            mediaPlayer.setOnCompletionListener(mp -> dismiss());
 
             mediaPlayer.setOnErrorListener((mp, what, extra) -> {
                 Log.e(TAG, "Adzan MediaPlayer error: what=" + what + ", extra=" + extra);
@@ -249,7 +188,7 @@ public final class AdzanPlayer {
     }
 
     public synchronized boolean isShowing() {
-        return isShowing && overlayView != null && overlayView.getVisibility() == View.VISIBLE;
+        return isShowing && overlay.isVisible();
     }
 
     public synchronized boolean isPlaying() {
@@ -260,6 +199,28 @@ public final class AdzanPlayer {
         }
     }
 
+    /**
+     * Pauses the video without giving up the call: a system dialog or the keyguard taking the foreground
+     * must not end the Adzan, so the host activity pauses here and resumes on the way back.
+     */
+    public void pause() {
+        try {
+            if (mediaPlayer != null && mediaPlayer.isPlaying()) mediaPlayer.pause();
+        } catch (Exception e) {
+            Log.w(TAG, "Could not pause adzan playback", e);
+        }
+    }
+
+    /** Continues a paused call, if the overlay is still up. */
+    public void resume() {
+        try {
+            if (isShowing && mediaPlayer != null && !mediaPlayer.isPlaying()) mediaPlayer.start();
+        } catch (Exception e) {
+            Log.w(TAG, "Could not resume adzan playback", e);
+        }
+    }
+
+    /** Ends the call and takes the overlay away; also the way out when playback fails. */
     public void dismiss() {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             dismissInternal();
@@ -271,33 +232,22 @@ public final class AdzanPlayer {
     private void dismissInternal() {
         if (!isShowing) return;
         isShowing = false;
-        main.removeCallbacks(autoHideRunnable);
-
+        overlay.cancelAutoHide();
         releasePlayer();
+        overlay.hide();
 
-        if (overlayView != null) {
-            overlayView.animate()
-                    .alpha(0f)
-                    .setDuration(250)
-                    .withEndAction(() -> {
-                        if (!isShowing && overlayView != null) {
-                            overlayView.setVisibility(View.GONE);
-                        }
-                    })
-                    .start();
-        }
-
+        // Give the focus back to the grid so the remote keeps working after the call.
         View grid = activity.findViewById(R.id.grid);
         if (grid != null) {
             grid.requestFocus();
         }
 
-        if (onStateChangeListener != null) onStateChangeListener.run();
+        notifyStateChanged();
         Log.i(TAG, "Adzan dismissed and returned to launcher");
     }
 
-    public void stop() {
-        dismiss();
+    private void notifyStateChanged() {
+        if (onStateChangeListener != null) onStateChangeListener.run();
     }
 
     private void releasePlayer() {
@@ -309,6 +259,7 @@ public final class AdzanPlayer {
                 mediaPlayer.reset();
                 mediaPlayer.release();
             } catch (Exception ignored) {
+                // Already released, or a codec gave up mid-teardown: nothing left to do either way.
             }
             mediaPlayer = null;
         }
@@ -321,105 +272,8 @@ public final class AdzanPlayer {
         }
     }
 
-    public void showControls() {
-        controlsHidden = false;
-        main.removeCallbacks(autoHideRunnable);
-        fadeView(adzanControls, 1f);
-        fadeView(adzanHeader, 1f);
-        fadeView(gradientTop, 1f);
-        fadeView(gradientBottom, 1f);
-        fadeView(adzanRemoteHint, 1f);
-
-        if (btnDismiss != null && !btnDismiss.isFocused() && btnKeep != null && !btnKeep.isFocused()) {
-            btnDismiss.requestFocus();
-        }
-    }
-
-    public void hideControls() {
-        controlsHidden = true;
-        main.removeCallbacks(autoHideRunnable);
-        fadeView(adzanControls, 0f);
-        fadeView(adzanHeader, 0f);
-        fadeView(gradientTop, 0f);
-        fadeView(gradientBottom, 0f);
-        fadeView(adzanRemoteHint, 0f);
-    }
-
-    private void scheduleAutoHideControls() {
-        main.removeCallbacks(autoHideRunnable);
-        main.postDelayed(autoHideRunnable, AUTO_HIDE_DELAY_MS);
-    }
-
-    private void fadeView(View view, float alpha) {
-        if (view != null) {
-            view.animate().alpha(alpha).setDuration(250).start();
-        }
-    }
-
-    /**
-     * Intercepts and handles remote key events while Adzan is visible.
-     * Prevents unintentional dismissal by arrow keys or volume changes,
-     * requiring explicit user action (Back button or Dismiss button) to exit.
-     */
+    /** Remote keys while the call is up; see AdzanOverlay for the mapping. */
     public boolean onKeyEvent(KeyEvent event) {
-        if (!isShowing()) return false;
-
-        int action = event.getAction();
-        int keyCode = event.getKeyCode();
-
-        // Let system volume keys pass through freely to change TV volume
-        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP
-                || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
-                || keyCode == KeyEvent.KEYCODE_VOLUME_MUTE) {
-            return false;
-        }
-
-        if (action == KeyEvent.ACTION_DOWN) {
-            // BACK key explicitly dismisses adzan
-            if (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_ESCAPE) {
-                dismiss();
-                return true;
-            }
-
-            // If HUD is hidden, any D-pad key reveals it and resets the timer
-            if (controlsHidden) {
-                showControls();
-                scheduleAutoHideControls();
-                return true;
-            }
-
-            // D-pad navigation between Dismiss and Keep Screen buttons
-            if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-                if (btnDismiss != null) btnDismiss.requestFocus();
-                scheduleAutoHideControls();
-                return true;
-            } else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-                if (btnKeep != null) btnKeep.requestFocus();
-                scheduleAutoHideControls();
-                return true;
-            } else if (keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-                scheduleAutoHideControls();
-                return true;
-            }
-
-            // Center/OK/Enter activates focused action
-            if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER
-                    || keyCode == KeyEvent.KEYCODE_ENTER
-                    || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
-                if (btnKeep != null && btnKeep.isFocused()) {
-                    hideControls();
-                } else {
-                    dismiss();
-                }
-                return true;
-            }
-
-            // Consume any other key so launcher underneath is not disturbed
-            return true;
-        } else if (action == KeyEvent.ACTION_UP) {
-            return true;
-        }
-
-        return true;
+        return overlay.handleKey(event);
     }
 }

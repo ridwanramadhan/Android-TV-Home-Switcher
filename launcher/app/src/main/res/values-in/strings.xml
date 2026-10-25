@@ -107,4 +107,14 @@
     <string name="race_live">%1$s · langsung</string>
     <string name="race_finished">Bendera finis</string>
     <string name="last_opened">Terakhir dibuka %1$s</string>
+
+    <!-- Panggilan Adzan layar penuh; %1$s adalah nama sholat, misalnya Maghrib. -->
+    <string name="adzan_prayer_time">🕌 Waktu Sholat %1$s Telah Tiba</string>
+    <string name="adzan_title_default">🕌 Waktu Sholat Telah Tiba</string>
+    <string name="adzan_dismiss">Tutup Adzan</string>
+    <string name="adzan_keep_screen">Tetap Tampilkan</string>
+    <string name="adzan_hint_remote">Tekan KEMBALI untuk menutup</string>
+    <string name="adzan_channel_name">Waktu Sholat &amp; Adzan</string>
+    <string name="adzan_channel_description">Pemberitahuan waktu sholat</string>
+    <string name="adzan_notification_body">Panggilan sholat sedang diputar</string>
 </resources>

@@ -115,10 +115,15 @@ public final class DashboardView extends View {
         p.setStyle(Paint.Style.FILL);
     }
 
-    private void txt(Canvas c, String s, float x, float y, float size, int color, int fontType) {
+    /** The three faces the panels are drawn in, as passed to {@link #txt}. */
+    private static final int FONT_REGULAR = 0;
+    private static final int FONT_MEDIUM = 1;
+    private static final int FONT_LIGHT = 2;
+
+    private void txt(Canvas c, String s, float x, float y, float size, int color, int face) {
         p.setColor(color);
         p.setTextSize(size);
-        p.setTypeface(fontType == 1 ? medium : fontType == 2 ? light : regular);
+        p.setTypeface(face == FONT_MEDIUM ? medium : face == FONT_LIGHT ? light : regular);
         p.setTextAlign(Paint.Align.LEFT);
         p.setShader(null);
         c.drawText(s, x, y, p);
@@ -144,15 +149,15 @@ public final class DashboardView extends View {
     }
 
     private void drawPrayer(Canvas c, RectF r) {
-        txt(c, "☪", 64, 206, 32, TEAL, 1);
-        txt(c, "Prayer Times", 108, 196, 22, WHITE, 1);
+        txt(c, "☪", 64, 206, 32, TEAL, FONT_MEDIUM);
+        txt(c, "Prayer Times", 108, 196, 22, WHITE, FONT_MEDIUM);
         txt(c, (data != null && data.savedPlace ? "⌖ Saved: " : "⌖ ") + compactPlace(),
-                109, 218, 13, MUTED, 0);
+                109, 218, 13, MUTED, FONT_REGULAR);
         line(c, 64, 233, 548);
 
         if (data == null || data.prayers.isEmpty() || !LocalDate.now().equals(data.prayerDate)) {
-            txt(c, "Today's schedule unavailable", 71, 284, 18, WHITE, 0);
-            txt(c, "Connect to Wi-Fi to update prayer times", 71, 311, 13, SUBTLE, 0);
+            txt(c, "Today's schedule unavailable", 71, 284, 18, WHITE, FONT_REGULAR);
+            txt(c, "Connect to Wi-Fi to update prayer times", 71, 311, 13, SUBTLE, FONT_REGULAR);
             return;
         }
 
@@ -175,12 +180,14 @@ public final class DashboardView extends View {
                 p.setStyle(Paint.Style.FILL);
             }
 
-            txt(c, prayer.name, x, 263, 12, isNext ? TEAL : MUTED, isNext ? 1 : 0);
+            txt(c, prayer.name, x, 263, 12, isNext ? TEAL : MUTED,
+                    isNext ? FONT_MEDIUM : FONT_REGULAR);
             txt(c, prayer.time.format(DateTimeFormatter.ofPattern("HH:mm", Locale.US)),
-                    x, 288, 16, isNext ? WHITE : 0xEEFFFFFF, 1);
+                    x, 288, 16, isNext ? WHITE : 0xEEFFFFFF, FONT_MEDIUM);
         }
 
-        // Countdown pill
+        // Countdown pill: it spans the same 64..548 column as the schedule above, so the card reads as one
+        // stack rather than a floating label.
         RectF countdownPill = new RectF(64, 312, 548, 362);
         p.setColor(0x261E293B);
         c.drawRoundRect(countdownPill, 14, 14, p);
@@ -192,45 +199,45 @@ public final class DashboardView extends View {
 
         if (next != null) {
             long hours = next.minutes / 60, minutes = next.minutes % 60;
-            txt(c, "◷", 80, 344, 22, TEAL, 1);
-            txt(c, "Next prayer", 112, 342, 15, MUTED, 0);
-            txt(c, next.name + " in " + hours + "h " + minutes + "m", 216, 342, 16, TEAL, 1);
+            txt(c, "◷", 80, 344, 22, TEAL, FONT_MEDIUM);
+            txt(c, "Next prayer", 112, 342, 15, MUTED, FONT_REGULAR);
+            txt(c, next.name + " in " + hours + "h " + minutes + "m", 216, 342, 16, TEAL, FONT_MEDIUM);
         }
     }
 
     private void drawWeather(Canvas c, RectF r) {
-        txt(c, "⌖ " + shortPlace(), 602, 196, 13, 0xFF93C5FD, 0);
+        txt(c, "⌖ " + shortPlace(), 602, 196, 13, 0xFF93C5FD, FONT_REGULAR);
         DashboardSnapshot.Weather w = data == null ? null : data.weather;
         if (w == null) {
-            txt(c, "Weather unavailable", 604, 268, 20, WHITE, 1);
-            txt(c, "Open-Meteo · waiting for data", 604, 302, 13, SUBTLE, 0);
+            txt(c, "Weather unavailable", 604, 268, 20, WHITE, FONT_MEDIUM);
+            txt(c, "Open-Meteo · waiting for data", 604, 302, 13, SUBTLE, FONT_REGULAR);
             return;
         }
 
-        txt(c, w.temperature + "°", 602, 276, 64, WHITE, 2);
-        txt(c, weatherSymbol(w.code), 754, 254, 32, WHITE, 0);
-        txt(c, weatherName(w.code), 798, 248, 16, WHITE, 1);
-        txt(c, "H:" + w.high + "°  L:" + w.low + "°", 798, 274, 15, 0xFFCBD5E1, 0);
+        txt(c, w.temperature + "°", 602, 276, 64, WHITE, FONT_LIGHT);
+        txt(c, weatherSymbol(w.code), 754, 254, 32, WHITE, FONT_REGULAR);
+        txt(c, weatherName(w.code), 798, 248, 16, WHITE, FONT_MEDIUM);
+        txt(c, "H:" + w.high + "°  L:" + w.low + "°", 798, 274, 15, 0xFFCBD5E1, FONT_REGULAR);
         line(c, 604, 294, 894);
 
         for (int i = 0; i < w.hours.length; i++) {
             float x = 604 + i * 58;
-            txt(c, w.hours[i], x, 316, 12, MUTED, 0);
-            txt(c, weatherSymbol(w.hourlyCodes[i]), x + 8, 338, 16, WHITE, 0);
-            txt(c, w.hourlyTemperatures[i] + "°", x + 3, 361, 14, WHITE, 1);
+            txt(c, w.hours[i], x, 316, 12, MUTED, FONT_REGULAR);
+            txt(c, weatherSymbol(w.hourlyCodes[i]), x + 8, 338, 16, WHITE, FONT_REGULAR);
+            txt(c, w.hourlyTemperatures[i] + "°", x + 3, 361, 14, WHITE, FONT_MEDIUM);
         }
-        txt(c, "Open-Meteo · " + age(w.updatedAt), 604, 376, 10, SUBTLE, 0);
+        txt(c, "Open-Meteo · " + age(w.updatedAt), 604, 376, 10, SUBTLE, FONT_REGULAR);
     }
 
     private void drawAir(Canvas c, RectF r) {
-        txt(c, "≋", 950, 204, 28, 0xFF67E8F9, 1);
-        txt(c, "Air Quality Index", 988, 198, 19, WHITE, 1);
-        txt(c, "⌖ " + shortPlace(), 988, 220, 12, MUTED, 0);
+        txt(c, "≋", 950, 204, 28, 0xFF67E8F9, FONT_MEDIUM);
+        txt(c, "Air Quality Index", 988, 198, 19, WHITE, FONT_MEDIUM);
+        txt(c, "⌖ " + shortPlace(), 988, 220, 12, MUTED, FONT_REGULAR);
 
         DashboardSnapshot.Air a = data == null ? null : data.air;
         if (a == null) {
-            txt(c, "AQI unavailable", 953, 293, 20, WHITE, 1);
-            txt(c, "Open-Meteo / CAMS", 953, 321, 13, SUBTLE, 0);
+            txt(c, "AQI unavailable", 953, 293, 20, WHITE, FONT_MEDIUM);
+            txt(c, "Open-Meteo / CAMS", 953, 321, 13, SUBTLE, FONT_REGULAR);
             return;
         }
 
@@ -248,12 +255,12 @@ public final class DashboardView extends View {
         p.setStyle(Paint.Style.FILL);
         p.setStrokeCap(Paint.Cap.BUTT);
 
-        txt(c, "AQI", 984, 295, 12, MUTED, 0);
-        txt(c, Integer.toString(a.aqi), 972, 320, 27, WHITE, 1);
+        txt(c, "AQI", 984, 295, 12, MUTED, FONT_REGULAR);
+        txt(c, Integer.toString(a.aqi), 972, 320, 27, WHITE, FONT_MEDIUM);
 
-        txt(c, DashboardSnapshot.aqiCategory(a.aqi), 1068, 293, 19, color, 1);
-        txt(c, "Regional estimate", 1068, 316, 13, SUBTLE, 0);
-        txt(c, "Open-Meteo / CAMS · " + age(a.updatedAt), 950, 372, 10, SUBTLE, 0);
+        txt(c, DashboardSnapshot.aqiCategory(a.aqi), 1068, 293, 19, color, FONT_MEDIUM);
+        txt(c, "Regional estimate", 1068, 316, 13, SUBTLE, FONT_REGULAR);
+        txt(c, "Open-Meteo / CAMS · " + age(a.updatedAt), 950, 372, 10, SUBTLE, FONT_REGULAR);
     }
 
     private void drawWatermark(Canvas c) {

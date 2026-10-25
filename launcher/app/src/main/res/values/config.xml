@@ -6,7 +6,9 @@
   Package names: on the TV run `pm list packages` (tools/tv.py 'pm list packages').
 -->
 <resources>
-    <!-- Local AQUA TV dashboard extension. -->
+    <!-- The widgets build's switch. true: the Liquid Glass cards (prayer, weather, AQI) on Home and on the
+         screensaver, and the adzan scheduling that rides on the same prayer feed. false (what `build.sh glass`
+         writes): the clean grid, with no cards and no alarm armed. build.sh flips this line per variant. -->
     <bool name="dashboard_panels">true</bool>
 
     <!-- Tried in order when no standard settings handler is usable; each package must also be visible
