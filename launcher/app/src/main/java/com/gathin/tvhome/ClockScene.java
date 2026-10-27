@@ -90,6 +90,7 @@ final class ClockScene {
         dashboardEnabled = panels;
 
         if (dashboard != null) {
+            dashboard.setScreensaverStyle(true);
             dashboard.setVisibility(dashboardEnabled ? View.VISIBLE : View.GONE);
         }
 

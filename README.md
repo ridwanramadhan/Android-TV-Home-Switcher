@@ -6,10 +6,23 @@ Switch an Android TV or Google TV between its stock Home screen and **Aqua TV Ho
 
 ## Screenshots
 
-|                            Stock Home                             |                               Fresh mode                                |                                              Widgets mode                                              |
-| :---------------------------------------------------------------: | :---------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------: |
-| <img src="docs/mode-default.png" width="280" alt="Stock TV Home"> | <img src="docs/mode-fresh.png" width="280" alt="Aqua TV Home app grid"> | <img src="docs/mode-widgets.png" width="280" alt="Aqua TV Home prayer, weather and air quality cards"> |
-|                         Original launcher                         |                            App grid and dock                            |                          Clock, prayer times, weather, air quality, and Adzan                          |
+### Stock Home
+
+![Original TV launcher](docs/mode-default.png)
+
+### Fresh mode
+
+![Aqua TV Home app grid and dock](docs/mode-fresh.png)
+
+### Widgets mode
+
+![Aqua TV Home clock, prayer times, weather, air quality, and Adzan](docs/mode-widgets.png)
+
+### Screensaver
+
+![Aqua TV Home screensaver with mosque gallery and information cards, captured in an Android emulator](docs/screensaver-emulator.png)
+
+Captured in an Android emulator; the photo and live card values vary by device and time.
 
 The TV launcher artwork used by Android is [a separate 320×180 banner](launcher/app/src/main/res/drawable-nodpi/banner.jpg).
 
@@ -31,7 +44,7 @@ The TV launcher artwork used by Android is [a separate 320×180 banner](launcher
 - An Android TV or Google TV device running **Android 8.0 / API 26 or newer**. OEM behavior varies; a supported API level does not guarantee that a TV permits changing Home.
 - A computer and TV on the same local network, with [Android platform-tools (adb)](https://developer.android.com/tools/releases/platform-tools) installed.
 - Developer options and ADB/network debugging enabled on the TV. Accept the computer's authorization prompt on the TV.
-- The included APKs in [apks/](apks/) or locally built replacements.
+- JDK 17 and Android SDK 34 to build the APKs locally. Generated APKs are not stored in Git.
 
 Changing the Home app affects the TV's user settings. Read [Backup and recovery](#backup-and-recovery) before switching, and keep ADB access available until Home works on your device.
 
@@ -46,7 +59,9 @@ Changing the Home app affects the TV's user settings. Read [Backup and recovery]
 
    On Windows PowerShell, use `.\switch.ps1 status 192.168.1.50`. Accept the ADB prompt on the TV if one appears.
 
-3. Switch modes:
+3. Build both launcher variants with `./build.sh all`. This creates the APKs in `apks/`. On Windows, run the build script from Git Bash or WSL.
+
+4. Switch modes:
 
    | Action                | macOS / Linux                            | Windows PowerShell                        |
    | --------------------- | ---------------------------------------- | ----------------------------------------- |
@@ -190,12 +205,10 @@ Preview a switch with `./switch.sh glass 192.168.1.50 --dry-run` or `.\switch.ps
 The Android app uses Java 17, Android Gradle Plugin 8.5.2, Gradle wrapper 8.14, `compileSdk`/`targetSdk` 34, and `minSdk` 26. Install JDK 17 and Android SDK 34, then run:
 
 ```bash
-./build.sh glass
-./build.sh glass-widgets
-# or ./build.sh all
+./build.sh all
 ```
 
-`build.sh` flips the `dashboard_panels` flag in [config.xml](launcher/app/src/main/res/values/config.xml) to select a mode, builds the APK, copies it to `apks/`, and puts `config.xml` back afterwards. To run JVM unit tests directly:
+`build.sh` flips the `dashboard_panels` flag in [config.xml](launcher/app/src/main/res/values/config.xml) to select a mode, builds the APKs, copies them to `apks/`, writes `apks/SHA256SUMS`, and puts `config.xml` back afterwards. The APKs and checksums are local build outputs ignored by Git; `apks/.gitkeep` retains the directory. Build one variant with `./build.sh glass` or `./build.sh glass-widgets` if needed. To run JVM unit tests directly:
 
 ```bash
 cd launcher
@@ -227,7 +240,7 @@ androidtv-switcher-launcher/
 ├── restore.sh                 # Restores the newest backup by running its generated restore script
 ├── build.sh                   # Rebuilds the fresh and widgets APKs from source
 ├── docs/                      # Screenshots, banner and architecture diagram
-├── apks/                      # Compiled release APKs and their SHA256SUMS
+├── apks/                      # Kept by .gitkeep; generated APKs and checksums stay local
 ├── backups/                   # Local TV snapshots (git-ignored)
 ├── .env.example               # Configuration template
 └── launcher/                  # Android Gradle project: Java 17, AGP 8.5.2, minSdk 26

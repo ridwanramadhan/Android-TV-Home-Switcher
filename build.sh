@@ -163,6 +163,23 @@ build_variant() {
   ok "$mode APK built: $(basename "$target_apk") ($(du -h "$target_apk" | awk '{print $1}'))"
 }
 
+write_checksums() {
+  local -a checksum_tool
+  if command -v shasum >/dev/null 2>&1; then
+    checksum_tool=(shasum -a 256)
+  elif command -v sha256sum >/dev/null 2>&1; then
+    checksum_tool=(sha256sum)
+  else
+    die "Neither shasum nor sha256sum is available to write APK checksums."
+  fi
+
+  (
+    cd "$APKS_DIR"
+    "${checksum_tool[@]}" ./*.apk > SHA256SUMS
+  )
+  ok "APK checksums written to apks/SHA256SUMS"
+}
+
 MODE="${1:-}"
 [[ -n "$MODE" ]] || { usage; exit 2; }
 
@@ -197,3 +214,5 @@ case "$MODE" in
     die "Unknown build mode '$MODE'. Available: glass, glass-widgets, fresh, widgets, all."
     ;;
 esac
+
+write_checksums

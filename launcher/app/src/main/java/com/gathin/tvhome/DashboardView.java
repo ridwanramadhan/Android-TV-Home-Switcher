@@ -33,6 +33,7 @@ public final class DashboardView extends View {
     private final GlassRim panelRim;
     private DashboardSnapshot data;
     private ZonedDateTime now = ZonedDateTime.now();
+    private boolean screensaverStyle;
 
     private static final int WHITE = Color.WHITE;
     private static final int MUTED = 0xB3CBD5E1; // slate-300 with high readability
@@ -62,6 +63,11 @@ public final class DashboardView extends View {
 
     void setSnapshot(DashboardSnapshot snapshot) {
         data = snapshot;
+        invalidate();
+    }
+
+    void setScreensaverStyle(boolean enabled) {
+        screensaverStyle = enabled;
         invalidate();
     }
 
@@ -98,7 +104,11 @@ public final class DashboardView extends View {
 
     private void liquidPanel(Canvas c, RectF r) {
         // Translucent frosted glass gradient
-        p.setShader(new LinearGradient(r.left, r.top, r.right, r.bottom, 0x3D182230, 0x240F1622, Shader.TileMode.CLAMP));
+        // Reset the paint alpha left by text/watermark drawing so the gradient keeps its intended opacity.
+        p.setColor(Color.WHITE);
+        int start = screensaverStyle ? 0x4D182230 : 0x3D182230;
+        int end = screensaverStyle ? 0x400F1622 : 0x240F1622;
+        p.setShader(new LinearGradient(r.left, r.top, r.right, r.bottom, start, end, Shader.TileMode.CLAMP));
         p.setStyle(Paint.Style.FILL);
         c.drawRoundRect(r, 22, 22, p);
         p.setShader(null);
