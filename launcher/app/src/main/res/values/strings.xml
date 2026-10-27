@@ -162,4 +162,47 @@
     <string name="adzan_channel_name">Prayer times &amp; adzan</string>
     <string name="adzan_channel_description">Announces each prayer time</string>
     <string name="adzan_notification_body">The call to prayer is playing</string>
+
+    <!-- Screensaver dashboard cards (DashboardView). Source names such as Open-Meteo are proper nouns. -->
+    <string name="dashboard_prayer_times">Prayer Times</string>
+    <string name="dashboard_place">⌖ %1$s</string>
+    <string name="dashboard_saved_place">⌖ Saved: %1$s</string>
+    <string name="dashboard_prayer_unavailable">Today\'s schedule unavailable</string>
+    <string name="dashboard_prayer_connect">Connect to Wi-Fi to update prayer times</string>
+    <string name="dashboard_next_prayer">Next prayer</string>
+    <string name="dashboard_next_prayer_in">%1$s in %2$dh %3$dm</string>
+    <string name="dashboard_weather_unavailable">Weather unavailable</string>
+    <string name="dashboard_weather_waiting">Open-Meteo · waiting for data</string>
+    <string name="dashboard_air_quality">Air Quality Index</string>
+    <string name="dashboard_aqi_unavailable">AQI unavailable</string>
+    <string name="dashboard_aqi">AQI</string>
+    <string name="dashboard_aqi_source">Open-Meteo / CAMS</string>
+    <string name="dashboard_regional_estimate">Regional estimate</string>
+    <string name="dashboard_weather_age_now">Open-Meteo · updated now</string>
+    <string name="dashboard_weather_age_ago">Open-Meteo · updated %1$dm ago</string>
+    <string name="dashboard_aqi_age_now">Open-Meteo / CAMS · updated now</string>
+    <string name="dashboard_aqi_age_ago">Open-Meteo / CAMS · updated %1$dm ago</string>
+    <string name="dashboard_accessibility">%1$s. %2$s. %3$s.</string>
+    <string name="dashboard_high_low">H:%1$d°  L:%2$d°</string>
+    <string name="dashboard_default_place" translatable="false">Pekayon, Pasar Rebo, East Jakarta</string>
+
+    <string name="weather_clear">Clear</string>
+    <string name="weather_partly_cloudy">Partly Cloudy</string>
+    <string name="weather_foggy">Foggy</string>
+    <string name="weather_rain">Rain</string>
+    <string name="weather_snow">Snow</string>
+    <string name="weather_showers">Showers</string>
+    <string name="weather_thunderstorm">Thunderstorm</string>
+    <string name="weather_hazy">Hazy</string>
+
+    <string name="aqi_good">Good</string>
+    <string name="aqi_moderate">Moderate</string>
+    <string name="aqi_sensitive_groups">Sensitive groups</string>
+    <string name="aqi_unhealthy">Unhealthy</string>
+    <string name="aqi_very_unhealthy">Very unhealthy</string>
+    <string name="aqi_hazardous">Hazardous</string>
+    <string name="aqi_unavailable">Unavailable</string>
+
+    <!-- One line of attribution under a mosque photo; %1$s is the creator and %2$s the licence. -->
+    <string name="mosque_photo_credit">Photo: %1$s · %2$s · Wikimedia Commons</string>
 </resources>

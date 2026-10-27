@@ -15,6 +15,14 @@ android {
         versionName '2.7'
     }
 
+    // Two installable variants from the same sources. The mosque gallery (its 30 drawables and the
+    // MosquePhotos manifest) lives in src/widgets, so resource shrinking drops it from the fresh APK.
+    flavorDimensions 'mode'
+    productFlavors {
+        fresh { dimension 'mode' }
+        widgets { dimension 'mode' }
+    }
+
     buildTypes {
         release {
             // R8 strips and optimises the code (AndroidX included): smaller APK, faster start on a slow TV CPU.

@@ -208,11 +208,11 @@ The Android app uses Java 17, Android Gradle Plugin 8.5.2, Gradle wrapper 8.14, 
 ./build.sh all
 ```
 
-`build.sh` flips the `dashboard_panels` flag in [config.xml](launcher/app/src/main/res/values/config.xml) to select a mode, builds the APKs, copies them to `apks/`, writes `apks/SHA256SUMS`, and puts `config.xml` back afterwards. The APKs and checksums are local build outputs ignored by Git; `apks/.gitkeep` retains the directory. Build one variant with `./build.sh glass` or `./build.sh glass-widgets` if needed. To run JVM unit tests directly:
+`build.sh` flips the `dashboard_panels` flag in [config.xml](launcher/app/src/main/res/values/config.xml) and picks the matching `fresh` or `widgets` flavor, builds the APKs, copies them to `apks/`, writes `apks/SHA256SUMS`, and puts `config.xml` back afterwards. The mosque gallery's photographs live only in the `widgets` flavor, so the fresh APK does not carry them. The APKs and checksums are local build outputs ignored by Git; `apks/.gitkeep` retains the directory. Build one variant with `./build.sh glass` or `./build.sh glass-widgets` if needed. To run JVM unit tests directly:
 
 ```bash
 cd launcher
-./gradlew :app:testDebugUnitTest
+./gradlew :app:test
 ```
 
 ### Android TV OS compatibility

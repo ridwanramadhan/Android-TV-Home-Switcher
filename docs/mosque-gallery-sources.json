@@ -3,180 +3,300 @@
     "slug": "istiqlal_jakarta",
     "commons_title": "File:Masjid Istiqlal.jpg",
     "mosque": "Masjid Istiqlal",
-    "location": "Jakarta"
+    "city": "Jakarta",
+    "province": "Jakarta",
+    "creator": "Michael Coghlan",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Masjid_Istiqlal.jpg"
   },
   {
     "slug": "baiturrahman_aceh",
     "commons_title": "File:Meuseujid Raya Baiturrahman, Aceh.jpg",
     "mosque": "Masjid Raya Baiturrahman",
-    "location": "Banda Aceh, Aceh"
+    "city": "Banda Aceh",
+    "province": "Aceh",
+    "creator": "Si Gam",
+    "license": "CC BY-SA 3.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Meuseujid_Raya_Baiturrahman,_Aceh.jpg"
   },
   {
     "slug": "al_jabbar_bandung",
     "commons_title": "File:Al Jabbar Grand Mosque.jpg",
     "mosque": "Masjid Raya Al Jabbar",
-    "location": "Bandung, Jawa Barat"
+    "city": "Bandung",
+    "province": "Jawa Barat",
+    "creator": "Arifmuttaqin",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Al_Jabbar_Grand_Mosque.jpg"
   },
   {
     "slug": "kubah_99_makassar",
     "commons_title": "File:MASJID 99 KUBAH, MAKASSAR 2026.jpg",
     "mosque": "Masjid 99 Kubah",
-    "location": "Makassar, Sulawesi Selatan"
+    "city": "Makassar",
+    "province": "Sulawesi Selatan",
+    "creator": "Volstand",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:MASJID_99_KUBAH,_MAKASSAR_2026.jpg"
   },
   {
     "slug": "raya_sumatera_barat",
     "commons_title": "File:Sheikh Ahmad Khatib Al-Minangkabawi Grand Mosque Padang Indonesia.jpg",
     "mosque": "Masjid Raya Sumatera Barat",
-    "location": "Padang, Sumatera Barat"
+    "city": "Padang",
+    "province": "Sumatera Barat",
+    "creator": "Undeka 11",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Sheikh_Ahmad_Khatib_Al-Minangkabawi_Grand_Mosque_Padang_Indonesia.jpg"
   },
   {
     "slug": "dian_al_mahri_depok",
     "commons_title": "File:Menara Masjid Dian Al Mahri.jpg",
     "mosque": "Masjid Dian Al-Mahri",
-    "location": "Depok, Jawa Barat"
+    "city": "Depok",
+    "province": "Jawa Barat",
+    "creator": "Alamnirvana",
+    "license": "CC BY-SA 3.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Menara_Masjid_Dian_Al_Mahri.jpg"
   },
   {
     "slug": "agung_jawa_tengah",
     "commons_title": "File:Masjid Agung Jawa Tengah Indonesia.jpg",
     "mosque": "Masjid Agung Jawa Tengah",
-    "location": "Semarang, Jawa Tengah"
+    "city": "Semarang",
+    "province": "Jawa Tengah",
+    "creator": "PL09Puryono",
+    "license": "CC BY-SA 3.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Masjid_Agung_Jawa_Tengah_Indonesia.jpg"
   },
   {
     "slug": "al_akbar_surabaya",
     "commons_title": "File:Masjid Nasional Al-Akbar Surabaya-1.jpg",
     "mosque": "Masjid Nasional Al-Akbar",
-    "location": "Surabaya, Jawa Timur"
+    "city": "Surabaya",
+    "province": "Jawa Timur",
+    "creator": "Indonesiagood",
+    "license": "CC BY 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Masjid_Nasional_Al-Akbar_Surabaya-1.jpg"
   },
   {
     "slug": "islamic_center_samarinda",
     "commons_title": "File:Islamic Centre Samarinda by bloesafir - panoramio.jpg",
     "mosque": "Masjid Islamic Center Samarinda",
-    "location": "Samarinda, Kalimantan Timur"
+    "city": "Samarinda",
+    "province": "Kalimantan Timur",
+    "creator": "Bloesafir Pamanjagau",
+    "license": "CC BY 3.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Islamic_Centre_Samarinda_by_bloesafir_-_panoramio.jpg"
   },
   {
     "slug": "hubbul_wathan_mataram",
     "commons_title": "File:Hubbul whaton islamic center mataram.jpg",
     "mosque": "Masjid Hubbul Wathan",
-    "location": "Mataram, Nusa Tenggara Barat"
+    "city": "Mataram",
+    "province": "Nusa Tenggara Barat",
+    "creator": "Ar09",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Hubbul_whaton_islamic_center_mataram.jpg"
   },
   {
     "slug": "raya_pekanbaru",
     "commons_title": "File:Masjid Raya Pekanbaru (2).jpg",
     "mosque": "Masjid Raya Pekanbaru",
-    "location": "Pekanbaru, Riau"
+    "city": "Pekanbaru",
+    "province": "Riau",
+    "creator": "DinaMardiati",
+    "license": "CC BY 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Masjid_Raya_Pekanbaru_(2).jpg"
   },
   {
     "slug": "raya_medan",
     "commons_title": "File:Masjid Raya Al Mashun Medan.jpg",
     "mosque": "Masjid Raya Al-Mashun",
-    "location": "Medan, Sumatera Utara"
+    "city": "Medan",
+    "province": "Sumatera Utara",
+    "creator": "Herusutimbul",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Masjid_Raya_Al_Mashun_Medan.jpg"
   },
   {
     "slug": "sultan_suriansyah",
     "commons_title": "File:Interior Masjid Sultan Suriansyah.jpg",
     "mosque": "Masjid Sultan Suriansyah",
-    "location": "Banjarmasin, Kalimantan Selatan"
+    "city": "Banjarmasin",
+    "province": "Kalimantan Selatan",
+    "creator": "Saipullah Srg",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Interior_Masjid_Sultan_Suriansyah.jpg"
   },
   {
     "slug": "menara_kudus",
     "commons_title": "File:Masjid Menara Kudus Dari Arah Timur Di Kab.Kudus Prop.Jateng Indonesia.jpg",
     "mosque": "Masjid Menara Kudus",
-    "location": "Kudus, Jawa Tengah"
+    "city": "Kudus",
+    "province": "Jawa Tengah",
+    "creator": "SATELITBM",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Masjid_Menara_Kudus_Dari_Arah_Timur_Di_Kab.Kudus_Prop.Jateng_Indonesia.jpg"
   },
   {
     "slug": "agung_demak",
     "commons_title": "File:Sisi Depan Serambi Masjid Agung Demak Kab.Demak Prop.Jateng Indonesia.jpg",
     "mosque": "Masjid Agung Demak",
-    "location": "Demak, Jawa Tengah"
+    "city": "Demak",
+    "province": "Jawa Tengah",
+    "creator": "DARMAS BS 9",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Sisi_Depan_Serambi_Masjid_Agung_Demak_Kab.Demak_Prop.Jateng_Indonesia.jpg"
   },
   {
     "slug": "agung_banten",
     "commons_title": "File:Masjid Agung Banten Tampak Samping.jpg",
     "mosque": "Masjid Agung Banten",
-    "location": "Serang, Banten"
+    "city": "Serang",
+    "province": "Banten",
+    "creator": "Arif Permana Putra",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Masjid_Agung_Banten_Tampak_Samping.jpg"
   },
   {
     "slug": "saka_tunggal_banyumas",
     "commons_title": "File:Saka Tunggal Mosque (exterior, HDR), Banyumas Regency, 2015-03-22.jpg",
     "mosque": "Masjid Saka Tunggal",
-    "location": "Banyumas, Jawa Tengah"
+    "city": "Banyumas",
+    "province": "Jawa Tengah",
+    "creator": "Crisco 1492",
+    "license": "Public domain",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Saka_Tunggal_Mosque_(exterior,_HDR),_Banyumas_Regency,_2015-03-22.jpg"
   },
   {
     "slug": "gedhe_kauman_yogyakarta",
     "commons_title": "File:Masjid Gedhe Kauman 2022 - from outside.jpg",
     "mosque": "Masjid Gedhe Kauman",
-    "location": "Yogyakarta"
+    "city": "Yogyakarta",
+    "province": "Yogyakarta",
+    "creator": "Aisha Tanduk",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Masjid_Gedhe_Kauman_2022_-_from_outside.jpg"
   },
   {
     "slug": "cheng_ho_pandaan",
     "commons_title": "File:Masjid Cheng Ho Pandaan Pasuruan.jpg",
     "mosque": "Masjid Muhammad Cheng Hoo",
-    "location": "Pandaan, Pasuruan, Jawa Timur"
+    "city": "Pandaan, Pasuruan",
+    "province": "Jawa Timur",
+    "creator": "Pemerintah Kabupaten Pasuruan",
+    "license": "Public domain",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Masjid_Cheng_Ho_Pandaan_Pasuruan.jpg"
   },
   {
     "slug": "cheng_ho_palembang",
     "commons_title": "File:Palembang Al Islam Muhammad Cheng Ho Mosque - Palembang, SS (15 Dec. 2021).jpg",
     "mosque": "Masjid Cheng Ho",
-    "location": "Palembang, Sumatera Selatan"
+    "city": "Palembang",
+    "province": "Sumatera Selatan",
+    "creator": "Firzafp",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Palembang_Al_Islam_Muhammad_Cheng_Ho_Mosque_-_Palembang,_SS_(15_Dec._2021).jpg"
   },
   {
     "slug": "al_azhar_jakarta",
     "commons_title": "File:Masjid Agung Al-Azhar 2021.jpg",
     "mosque": "Masjid Agung Al-Azhar",
-    "location": "Jakarta"
+    "city": "Jakarta",
+    "province": "Jakarta",
+    "creator": "Rhmtdns",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Masjid_Agung_Al-Azhar_2021.jpg"
   },
   {
     "slug": "amirul_mukminin_makassar",
     "commons_title": "File:Masjid Terapung Amirrul Mukminin Makassar.jpg",
     "mosque": "Masjid Amirul Mukminin",
-    "location": "Makassar, Sulawesi Selatan"
+    "city": "Makassar",
+    "province": "Sulawesi Selatan",
+    "creator": "Dispora Kota Makassar",
+    "license": "Public domain",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Masjid_Terapung_Amirrul_Mukminin_Makassar.jpg"
   },
   {
     "slug": "agung_palembang",
     "commons_title": "File:Masjid Agung Sultan Mahmud Badaruddin II Palembang - Bkt. Kecil, Palembang, SS (18 August 2020).jpg",
     "mosque": "Masjid Agung Palembang",
-    "location": "Palembang, Sumatera Selatan"
+    "city": "Palembang",
+    "province": "Sumatera Selatan",
+    "creator": "Firzafp",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Masjid_Agung_Sultan_Mahmud_Badaruddin_II_Palembang_-_Bkt._Kecil,_Palembang,_SS_(18_August_2020).jpg"
   },
   {
     "slug": "ibnu_batutah_bali",
     "commons_title": "File:Kuta Bali Indonesia Masjid-Agung-Ibnu-Batutah-02.jpg",
     "mosque": "Masjid Agung Ibnu Batutah",
-    "location": "Nusa Dua, Badung, Bali"
+    "city": "Nusa Dua, Badung",
+    "province": "Bali",
+    "creator": "CEphoto, Uwe Aranas",
+    "license": "CC BY-SA 3.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Kuta_Bali_Indonesia_Masjid-Agung-Ibnu-Batutah-02.jpg"
   },
   {
     "slug": "jami_malang",
     "commons_title": "File:Front Of Great Mosque Jami 'Malang.jpg",
     "mosque": "Masjid Agung Jami Malang",
-    "location": "Malang, Jawa Timur"
+    "city": "Malang",
+    "province": "Jawa Timur",
+    "creator": "ZidaneHartono",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Front_Of_Great_Mosque_Jami_%27Malang.jpg"
   },
   {
     "slug": "sunan_ampel_surabaya",
     "commons_title": "File:Ampel Mosque in 2008.jpg",
     "mosque": "Masjid Sunan Ampel",
-    "location": "Surabaya, Jawa Timur"
+    "city": "Surabaya",
+    "province": "Jawa Timur",
+    "creator": "consigliere ivan from Bontang, Indonesia",
+    "license": "CC BY 2.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Ampel_Mosque_in_2008.jpg"
   },
   {
     "slug": "kampus_ugm",
     "commons_title": "File:Masjid Kampus UGM Yogyakarta.jpg",
     "mosque": "Masjid Kampus UGM",
-    "location": "Sleman, Daerah Istimewa Yogyakarta"
+    "city": "Sleman",
+    "province": "Daerah Istimewa Yogyakarta",
+    "creator": "Aqilla Rahmi",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Masjid_Kampus_UGM_Yogyakarta.jpg"
   },
   {
     "slug": "raya_pangkalan_koto_baru",
     "commons_title": "File:Masjid Raya Pangkalan Koto Baru.jpg",
     "mosque": "Masjid Raya Pangkalan Koto Baru",
-    "location": "Lima Puluh Kota, Sumatera Barat"
+    "city": "Lima Puluh Kota",
+    "province": "Sumatera Barat",
+    "creator": "Rahmatdenas",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Masjid_Raya_Pangkalan_Koto_Baru.jpg"
   },
   {
     "slug": "jami_lasem",
     "commons_title": "File:Masjid Jami Baiturrahman Lasem.jpg",
     "mosque": "Masjid Jami Lasem",
-    "location": "Lasem, Rembang, Jawa Tengah"
+    "city": "Lasem, Rembang",
+    "province": "Jawa Tengah",
+    "creator": "Fhikri Latifi",
+    "license": "CC BY 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Masjid_Jami_Baiturrahman_Lasem.jpg"
   },
   {
     "slug": "hunto_sultan_amai",
     "commons_title": "File:Masjid Hunto Sultan Amai.jpg",
     "mosque": "Masjid Hunto Sultan Amay",
-    "location": "Gorontalo, Gorontalo"
+    "city": "Gorontalo",
+    "province": "Gorontalo",
+    "creator": "Supardisahabu",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Masjid_Hunto_Sultan_Amai.jpg"
   }
 ]

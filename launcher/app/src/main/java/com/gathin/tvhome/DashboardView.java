@@ -44,6 +44,8 @@ public final class DashboardView extends View {
     public DashboardView(Context context, AttributeSet attrs) {
         super(context, attrs);
         setFocusable(false);
+        // Custom-drawn cards: expose the summary to TalkBack instead of leaving the view silent.
+        setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
         Typeface reg, med, lig;
         try {
             reg = UiFont.get(context, R.string.font_regular);
@@ -63,6 +65,7 @@ public final class DashboardView extends View {
 
     void setSnapshot(DashboardSnapshot snapshot) {
         data = snapshot;
+        updateAccessibilityDescription();
         invalidate();
     }
 
@@ -73,15 +76,30 @@ public final class DashboardView extends View {
 
     void updateCountdown(ZonedDateTime time) {
         now = time;
+        updateAccessibilityDescription();
         invalidate();
+    }
+
+    /** Uniform scale for the 1280×720 drawing baseline, letterboxed instead of stretched on other ratios. */
+    static float contentScale(int width, int height) {
+        return Math.min(width / 1280f, height / 720f);
+    }
+
+    /** Y of the card row's 162/720 baseline in view pixels, including the letterbox offset. */
+    static float cardTopPx(int width, int height) {
+        float scale = contentScale(width, height);
+        return (height - 720f * scale) / 2f + 162f * scale;
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        float sx = getWidth() / 1280f, sy = getHeight() / 720f;
+        float scale = contentScale(getWidth(), getHeight());
+        float dx = (getWidth() - 1280f * scale) / 2f;
+        float dy = (getHeight() - 720f * scale) / 2f;
         canvas.save();
-        canvas.scale(sx, sy);
+        canvas.translate(dx, dy);
+        canvas.scale(scale, scale);
 
         RectF prayer = new RectF(42, 162, 570, 382);
         RectF weather = new RectF(580, 162, 918, 382);
@@ -139,6 +157,10 @@ public final class DashboardView extends View {
         c.drawText(s, x, y, p);
     }
 
+    private String str(int id, Object... args) {
+        return getContext().getString(id, args);
+    }
+
     private void line(Canvas c, float x1, float y, float x2) {
         p.setColor(0x22FFFFFF);
         p.setStrokeWidth(1);
@@ -146,7 +168,7 @@ public final class DashboardView extends View {
     }
 
     private String place() {
-        return data == null ? "Pekayon, Pasar Rebo, East Jakarta" : data.place;
+        return data == null ? str(R.string.dashboard_default_place) : data.place;
     }
 
     private String compactPlace() {
@@ -160,14 +182,15 @@ public final class DashboardView extends View {
 
     private void drawPrayer(Canvas c, RectF r) {
         txt(c, "☪", 64, 206, 32, TEAL, FONT_MEDIUM);
-        txt(c, "Prayer Times", 108, 196, 22, WHITE, FONT_MEDIUM);
-        txt(c, (data != null && data.savedPlace ? "⌖ Saved: " : "⌖ ") + compactPlace(),
+        txt(c, str(R.string.dashboard_prayer_times), 108, 196, 22, WHITE, FONT_MEDIUM);
+        txt(c, str(data != null && data.savedPlace ? R.string.dashboard_saved_place : R.string.dashboard_place,
+                        compactPlace()),
                 109, 218, 13, MUTED, FONT_REGULAR);
         line(c, 64, 233, 548);
 
         if (data == null || data.prayers.isEmpty() || !LocalDate.now().equals(data.prayerDate)) {
-            txt(c, "Today's schedule unavailable", 71, 284, 18, WHITE, FONT_REGULAR);
-            txt(c, "Connect to Wi-Fi to update prayer times", 71, 311, 13, SUBTLE, FONT_REGULAR);
+            txt(c, str(R.string.dashboard_prayer_unavailable), 71, 284, 18, WHITE, FONT_REGULAR);
+            txt(c, str(R.string.dashboard_prayer_connect), 71, 311, 13, SUBTLE, FONT_REGULAR);
             return;
         }
 
@@ -210,24 +233,25 @@ public final class DashboardView extends View {
         if (next != null) {
             long hours = next.minutes / 60, minutes = next.minutes % 60;
             txt(c, "◷", 80, 344, 22, TEAL, FONT_MEDIUM);
-            txt(c, "Next prayer", 112, 342, 15, MUTED, FONT_REGULAR);
-            txt(c, next.name + " in " + hours + "h " + minutes + "m", 216, 342, 16, TEAL, FONT_MEDIUM);
+            txt(c, str(R.string.dashboard_next_prayer), 112, 342, 15, MUTED, FONT_REGULAR);
+            txt(c, str(R.string.dashboard_next_prayer_in, next.name, hours, minutes),
+                    216, 342, 16, TEAL, FONT_MEDIUM);
         }
     }
 
     private void drawWeather(Canvas c, RectF r) {
-        txt(c, "⌖ " + shortPlace(), 602, 196, 13, 0xFF93C5FD, FONT_REGULAR);
+        txt(c, str(R.string.dashboard_place, shortPlace()), 602, 196, 13, 0xFF93C5FD, FONT_REGULAR);
         DashboardSnapshot.Weather w = data == null ? null : data.weather;
         if (w == null) {
-            txt(c, "Weather unavailable", 604, 268, 20, WHITE, FONT_MEDIUM);
-            txt(c, "Open-Meteo · waiting for data", 604, 302, 13, SUBTLE, FONT_REGULAR);
+            txt(c, str(R.string.dashboard_weather_unavailable), 604, 268, 20, WHITE, FONT_MEDIUM);
+            txt(c, str(R.string.dashboard_weather_waiting), 604, 302, 13, SUBTLE, FONT_REGULAR);
             return;
         }
 
         txt(c, w.temperature + "°", 602, 276, 64, WHITE, FONT_LIGHT);
         txt(c, weatherSymbol(w.code), 754, 254, 32, WHITE, FONT_REGULAR);
-        txt(c, weatherName(w.code), 798, 248, 16, WHITE, FONT_MEDIUM);
-        txt(c, "H:" + w.high + "°  L:" + w.low + "°", 798, 274, 15, 0xFFCBD5E1, FONT_REGULAR);
+        txt(c, str(weatherNameRes(w.code)), 798, 248, 16, WHITE, FONT_MEDIUM);
+        txt(c, str(R.string.dashboard_high_low, w.high, w.low), 798, 274, 15, 0xFFCBD5E1, FONT_REGULAR);
         line(c, 604, 294, 894);
 
         for (int i = 0; i < w.hours.length; i++) {
@@ -236,18 +260,18 @@ public final class DashboardView extends View {
             txt(c, weatherSymbol(w.hourlyCodes[i]), x + 8, 338, 16, WHITE, FONT_REGULAR);
             txt(c, w.hourlyTemperatures[i] + "°", x + 3, 361, 14, WHITE, FONT_MEDIUM);
         }
-        txt(c, "Open-Meteo · " + age(w.updatedAt), 604, 376, 10, SUBTLE, FONT_REGULAR);
+        txt(c, weatherAge(w.updatedAt), 604, 376, 10, SUBTLE, FONT_REGULAR);
     }
 
     private void drawAir(Canvas c, RectF r) {
         txt(c, "≋", 950, 204, 28, 0xFF67E8F9, FONT_MEDIUM);
-        txt(c, "Air Quality Index", 988, 198, 19, WHITE, FONT_MEDIUM);
-        txt(c, "⌖ " + shortPlace(), 988, 220, 12, MUTED, FONT_REGULAR);
+        txt(c, str(R.string.dashboard_air_quality), 988, 198, 19, WHITE, FONT_MEDIUM);
+        txt(c, str(R.string.dashboard_place, shortPlace()), 988, 220, 12, MUTED, FONT_REGULAR);
 
         DashboardSnapshot.Air a = data == null ? null : data.air;
         if (a == null) {
-            txt(c, "AQI unavailable", 953, 293, 20, WHITE, FONT_MEDIUM);
-            txt(c, "Open-Meteo / CAMS", 953, 321, 13, SUBTLE, FONT_REGULAR);
+            txt(c, str(R.string.dashboard_aqi_unavailable), 953, 293, 20, WHITE, FONT_MEDIUM);
+            txt(c, str(R.string.dashboard_aqi_source), 953, 321, 13, SUBTLE, FONT_REGULAR);
             return;
         }
 
@@ -265,12 +289,12 @@ public final class DashboardView extends View {
         p.setStyle(Paint.Style.FILL);
         p.setStrokeCap(Paint.Cap.BUTT);
 
-        txt(c, "AQI", 984, 295, 12, MUTED, FONT_REGULAR);
+        txt(c, str(R.string.dashboard_aqi), 984, 295, 12, MUTED, FONT_REGULAR);
         txt(c, Integer.toString(a.aqi), 972, 320, 27, WHITE, FONT_MEDIUM);
 
-        txt(c, DashboardSnapshot.aqiCategory(a.aqi), 1068, 293, 19, color, FONT_MEDIUM);
-        txt(c, "Regional estimate", 1068, 316, 13, SUBTLE, FONT_REGULAR);
-        txt(c, "Open-Meteo / CAMS · " + age(a.updatedAt), 950, 372, 10, SUBTLE, FONT_REGULAR);
+        txt(c, str(aqiCategoryRes(a.aqi)), 1068, 293, 19, color, FONT_MEDIUM);
+        txt(c, str(R.string.dashboard_regional_estimate), 1068, 316, 13, SUBTLE, FONT_REGULAR);
+        txt(c, aqiAge(a.updatedAt), 950, 372, 10, SUBTLE, FONT_REGULAR);
     }
 
     private void drawWatermark(Canvas c) {
@@ -284,9 +308,52 @@ public final class DashboardView extends View {
         p.setLetterSpacing(0f);
     }
 
-    private static String age(long updated) {
-        long minutes = Math.max(0, (System.currentTimeMillis() - updated) / 60_000);
-        return minutes < 2 ? "updated now" : "updated " + minutes + "m ago";
+    private static int minuteAge(long updated) {
+        return (int) Math.max(0, (System.currentTimeMillis() - updated) / 60_000);
+    }
+
+    private String weatherAge(long updated) {
+        int minutes = minuteAge(updated);
+        return minutes < 2 ? str(R.string.dashboard_weather_age_now)
+                : str(R.string.dashboard_weather_age_ago, minutes);
+    }
+
+    private String aqiAge(long updated) {
+        int minutes = minuteAge(updated);
+        return minutes < 2 ? str(R.string.dashboard_aqi_age_now)
+                : str(R.string.dashboard_aqi_age_ago, minutes);
+    }
+
+    private static int aqiCategoryRes(int value) {
+        switch (DashboardSnapshot.aqiCategory(value)) {
+            case GOOD: return R.string.aqi_good;
+            case MODERATE: return R.string.aqi_moderate;
+            case SENSITIVE_GROUPS: return R.string.aqi_sensitive_groups;
+            case UNHEALTHY: return R.string.aqi_unhealthy;
+            case VERY_UNHEALTHY: return R.string.aqi_very_unhealthy;
+            case HAZARDOUS: return R.string.aqi_hazardous;
+            default: return R.string.aqi_unavailable;
+        }
+    }
+
+    /** What TalkBack reads for the cards: the same values the canvas shows, in one line. */
+    private void updateAccessibilityDescription() {
+        String prayers;
+        if (data == null || data.prayers.isEmpty() || !LocalDate.now().equals(data.prayerDate)) {
+            prayers = str(R.string.dashboard_prayer_unavailable);
+        } else {
+            DashboardSnapshot.NextPrayer next = DashboardSnapshot.nextPrayer(data.prayers, now);
+            prayers = next == null
+                    ? str(R.string.dashboard_prayer_times)
+                    : str(R.string.dashboard_next_prayer_in, next.name, next.minutes / 60, next.minutes % 60);
+        }
+        String weather = data == null || data.weather == null
+                ? str(R.string.dashboard_weather_unavailable)
+                : data.weather.temperature + "° " + str(weatherNameRes(data.weather.code));
+        String air = data == null || data.air == null
+                ? str(R.string.dashboard_aqi_unavailable)
+                : str(R.string.dashboard_aqi) + " " + data.air.aqi + " " + str(aqiCategoryRes(data.air.aqi));
+        setContentDescription(str(R.string.dashboard_accessibility, prayers, weather, air));
     }
 
     private static String weatherSymbol(int code) {
@@ -300,14 +367,14 @@ public final class DashboardView extends View {
         return "⛅";
     }
 
-    private static String weatherName(int code) {
-        if (code <= 1) return "Clear";
-        if (code <= 3) return "Partly Cloudy";
-        if (code >= 45 && code <= 48) return "Foggy";
-        if (code >= 51 && code <= 67) return "Rain";
-        if (code >= 71 && code <= 77) return "Snow";
-        if (code >= 80 && code <= 82) return "Showers";
-        if (code >= 95) return "Thunderstorm";
-        return "Hazy";
+    private static int weatherNameRes(int code) {
+        if (code <= 1) return R.string.weather_clear;
+        if (code <= 3) return R.string.weather_partly_cloudy;
+        if (code >= 45 && code <= 48) return R.string.weather_foggy;
+        if (code >= 51 && code <= 67) return R.string.weather_rain;
+        if (code >= 71 && code <= 77) return R.string.weather_snow;
+        if (code >= 80 && code <= 82) return R.string.weather_showers;
+        if (code >= 95) return R.string.weather_thunderstorm;
+        return R.string.weather_hazy;
     }
 }

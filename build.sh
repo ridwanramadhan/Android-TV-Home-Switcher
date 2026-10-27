@@ -137,11 +137,15 @@ build_variant() {
   local target_apk="$2"
   local alt_apk="${3:-}"
   local enable_dash="$4"
+  local flavor="$5"
 
-  info "Configuring launcher for: $mode (dashboard_panels=$enable_dash)"
+  info "Configuring launcher for: $mode (dashboard_panels=$enable_dash, flavor=$flavor)"
   set_dashboard_panels "$enable_dash"
 
   info "Compiling $mode release APK..."
+  # macOS ships bash 3.2, so no ${var^}: pick the flavor's assemble task explicitly.
+  local assemble_task="assembleFreshRelease"
+  [[ "$flavor" == "widgets" ]] && assemble_task="assembleWidgetsRelease"
   (
     cd "$LAUNCHER_DIR"
     export JAVA_HOME="$DETECTED_JAVA"
@@ -149,10 +153,10 @@ build_variant() {
     export PATH="$JAVA_HOME/bin:$PATH"
     echo "sdk.dir=$ANDROID_HOME" > local.properties
     GRADLE_BIN="$(find_gradle)"
-    "$GRADLE_BIN" assembleRelease --no-daemon -q --console=plain
+    "$GRADLE_BIN" "$assemble_task" --no-daemon -q --console=plain
   )
 
-  local built_apk="$LAUNCHER_DIR/app/build/outputs/apk/release/app-release.apk"
+  local built_apk="$LAUNCHER_DIR/app/build/outputs/apk/$flavor/release/app-$flavor-release.apk"
   [[ -f "$built_apk" ]] || die "Build failed. $built_apk was not generated."
 
   mkdir -p "$APKS_DIR"
@@ -201,14 +205,14 @@ trap 'exit 130' INT TERM
 
 case "$MODE" in
   glass|glass-fresh|fresh)
-    build_variant "glass-fresh" "$APKS_DIR/glass-tv-fresh.apk" "$APKS_DIR/aqua-tv-home-fresh.apk" "false"
+    build_variant "glass-fresh" "$APKS_DIR/glass-tv-fresh.apk" "$APKS_DIR/aqua-tv-home-fresh.apk" "false" "fresh"
     ;;
   glass-widgets|widgets|dashboard)
-    build_variant "glass-widgets" "$APKS_DIR/glass-tv-widgets.apk" "$APKS_DIR/aqua-tv-home-widgets.apk" "true"
+    build_variant "glass-widgets" "$APKS_DIR/glass-tv-widgets.apk" "$APKS_DIR/aqua-tv-home-widgets.apk" "true" "widgets"
     ;;
   all)
-    build_variant "glass-fresh" "$APKS_DIR/glass-tv-fresh.apk" "$APKS_DIR/aqua-tv-home-fresh.apk" "false"
-    build_variant "glass-widgets" "$APKS_DIR/glass-tv-widgets.apk" "$APKS_DIR/aqua-tv-home-widgets.apk" "true"
+    build_variant "glass-fresh" "$APKS_DIR/glass-tv-fresh.apk" "$APKS_DIR/aqua-tv-home-fresh.apk" "false" "fresh"
+    build_variant "glass-widgets" "$APKS_DIR/glass-tv-widgets.apk" "$APKS_DIR/aqua-tv-home-widgets.apk" "true" "widgets"
     ;;
   *)
     die "Unknown build mode '$MODE'. Available: glass, glass-widgets, fresh, widgets, all."

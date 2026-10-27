@@ -21,7 +21,7 @@ final class MosquePhotos {
                 new MosquePhoto(R.drawable.mosque_raya_sumatera_barat,
                         "Masjid Raya Sumatera Barat", "Padang, Sumatera Barat", "Undeka 11", "CC BY-SA 4.0", "https://commons.wikimedia.org/wiki/File:Sheikh_Ahmad_Khatib_Al-Minangkabawi_Grand_Mosque_Padang_Indonesia.jpg"),
                 new MosquePhoto(R.drawable.mosque_dian_al_mahri_depok,
-                        "Masjid Dian Al-Mahri", "Depok, Jawa Barat", "Alamnirvana https://id.wikipedia.org/wiki/Pengguna:Alamnirvana", "CC BY-SA 3.0", "https://commons.wikimedia.org/wiki/File:Menara_Masjid_Dian_Al_Mahri.jpg"),
+                        "Masjid Dian Al-Mahri", "Depok, Jawa Barat", "Alamnirvana", "CC BY-SA 3.0", "https://commons.wikimedia.org/wiki/File:Menara_Masjid_Dian_Al_Mahri.jpg"),
                 new MosquePhoto(R.drawable.mosque_agung_jawa_tengah,
                         "Masjid Agung Jawa Tengah", "Semarang, Jawa Tengah", "PL09Puryono", "CC BY-SA 3.0", "https://commons.wikimedia.org/wiki/File:Masjid_Agung_Jawa_Tengah_Indonesia.jpg"),
                 new MosquePhoto(R.drawable.mosque_al_akbar_surabaya,

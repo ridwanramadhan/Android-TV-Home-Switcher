@@ -15,3 +15,5 @@ launcher/app/build/
 # Locally built release packages
 apks/*.apk
 apks/SHA256SUMS
+
+.agents

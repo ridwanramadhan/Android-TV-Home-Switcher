@@ -117,4 +117,45 @@
     <string name="adzan_channel_name">Waktu Sholat &amp; Adzan</string>
     <string name="adzan_channel_description">Pemberitahuan waktu sholat</string>
     <string name="adzan_notification_body">Panggilan sholat sedang diputar</string>
+
+    <!-- Kartu dasbor pada screensaver (DashboardView). Nama sumber seperti Open-Meteo adalah nama diri. -->
+    <string name="dashboard_prayer_times">Waktu Sholat</string>
+    <string name="dashboard_place">⌖ %1$s</string>
+    <string name="dashboard_saved_place">⌖ Tersimpan: %1$s</string>
+    <string name="dashboard_prayer_unavailable">Jadwal hari ini tidak tersedia</string>
+    <string name="dashboard_prayer_connect">Sambungkan ke Wi-Fi untuk memperbarui waktu sholat</string>
+    <string name="dashboard_next_prayer">Sholat berikutnya</string>
+    <string name="dashboard_next_prayer_in">%1$s dalam %2$dj %3$dm</string>
+    <string name="dashboard_weather_unavailable">Cuaca tidak tersedia</string>
+    <string name="dashboard_weather_waiting">Open-Meteo · menunggu data</string>
+    <string name="dashboard_air_quality">Indeks Kualitas Udara</string>
+    <string name="dashboard_aqi_unavailable">AQI tidak tersedia</string>
+    <string name="dashboard_aqi">AQI</string>
+    <string name="dashboard_aqi_source">Open-Meteo / CAMS</string>
+    <string name="dashboard_regional_estimate">Perkiraan regional</string>
+    <string name="dashboard_weather_age_now">Open-Meteo · baru diperbarui</string>
+    <string name="dashboard_weather_age_ago">Open-Meteo · diperbarui %1$dm lalu</string>
+    <string name="dashboard_aqi_age_now">Open-Meteo / CAMS · baru diperbarui</string>
+    <string name="dashboard_aqi_age_ago">Open-Meteo / CAMS · diperbarui %1$dm lalu</string>
+    <string name="dashboard_accessibility">%1$s. %2$s. %3$s.</string>
+    <string name="dashboard_high_low">T:%1$d°  R:%2$d°</string>
+
+    <string name="weather_clear">Cerah</string>
+    <string name="weather_partly_cloudy">Berawan sebagian</string>
+    <string name="weather_foggy">Berkabut</string>
+    <string name="weather_rain">Hujan</string>
+    <string name="weather_snow">Salju</string>
+    <string name="weather_showers">Hujan lokal</string>
+    <string name="weather_thunderstorm">Badai petir</string>
+    <string name="weather_hazy">Berkabut tipis</string>
+
+    <string name="aqi_good">Baik</string>
+    <string name="aqi_moderate">Sedang</string>
+    <string name="aqi_sensitive_groups">Kelompok sensitif</string>
+    <string name="aqi_unhealthy">Tidak sehat</string>
+    <string name="aqi_very_unhealthy">Sangat tidak sehat</string>
+    <string name="aqi_hazardous">Berbahaya</string>
+    <string name="aqi_unavailable">Tidak tersedia</string>
+
+    <string name="mosque_photo_credit">Foto: %1$s · %2$s · Wikimedia Commons</string>
 </resources>

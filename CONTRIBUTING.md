@@ -12,7 +12,7 @@ Thanks for helping improve Android TV Home Switcher. Device-specific reports and
 
 - Install JDK 17 and Android SDK 34.
 - Build with `./build.sh glass`, `./build.sh glass-widgets`, or `./build.sh all`.
-- Run JVM tests with `cd launcher && ./gradlew :app:testDebugUnitTest`.
+- Run JVM tests with `cd launcher && ./gradlew :app:test` (runs the `fresh` and `widgets` flavors; use `:app:testWidgetsDebugUnitTest` for the widgets-only gallery tests).
 - For shell changes, run `bash -n switch.sh backup.sh restore.sh build.sh` and use `--dry-run` on a real device before a live switch.
 - For documentation, check that links and images render and that command examples match `--help`.
 

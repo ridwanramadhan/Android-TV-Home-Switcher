@@ -5,8 +5,6 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * Maps the remote's Input button to the system input switcher, from any app. Remotes such as the Chromecast voice
@@ -21,14 +19,10 @@ public class InputKeyService extends AccessibilityService {
     private static final String ACTION_VIEW_INPUTS = "com.android.tv.action.VIEW_INPUTS";
 
     private int[] inputKeycodes = new int[0];
-    private Map<Integer, String> appKeys = Collections.emptyMap();
-    private Map<Integer, String> appScancodes = Collections.emptyMap();
-    private Map<Integer, String> holdAppKeys = Collections.emptyMap();
-    private Map<Integer, String> holdAppScancodes = Collections.emptyMap();
+    /** app_keys and consume_volume_keys, shared with HomeKeyService. */
+    private KeyBindings keys = KeyBindings.empty();
     /** restore_key_services was on when the config was read: this helper is noted for ServiceRepair. */
     private boolean repairRecord;
-    /** consume_volume_keys: Volume Up/Down go to VolumeKeys instead of on to the firmware. */
-    private boolean consumeVolumeKeys;
     /** Stops key filtering while a game controller is connected; null unless gamepad_passthrough and key_filter. */
     private GamepadPassthrough gamepads;
 
@@ -41,12 +35,8 @@ public class InputKeyService extends AccessibilityService {
         repairRecord = config.restoreKeyServices;
         if (repairRecord) ServiceRepair.connected(this, getClass());
         inputKeycodes = config.inputKeycodes;
-        consumeVolumeKeys = config.consumeVolumeKeys;
-        appKeys = RemoteKeys.parseAppKeys(config.appKeys);
-        appScancodes = RemoteKeys.parseAppScancodes(config.appKeys);
+        keys = KeyBindings.from(config);
         RemoteKeys.applyKeyFilter(this, config.keyFilter);
-        holdAppKeys = RemoteKeys.parseHoldAppKeys(config.appKeys);
-        holdAppScancodes = RemoteKeys.parseHoldAppScancodes(config.appKeys);
         // gamepad_passthrough, off by default. Only with key_filter on: off, the service never filters keys.
         if (config.gamepadPassthrough && config.keyFilter && gamepads == null) {
             gamepads = new GamepadPassthrough(this);
@@ -62,12 +52,10 @@ public class InputKeyService extends AccessibilityService {
 
     @Override
     protected boolean onKeyEvent(KeyEvent event) {
-        if (consumeVolumeKeys && VolumeKeys.handle(this, event)) return true;
+        if (keys.handleVolume(this, event)) return true;
         // A scancode entry is more specific than any keycode, so it goes first.
-        if (RemoteKeys.handle(this, event, appScancodes.get(event.getScanCode()),
-                holdAppScancodes.get(event.getScanCode()))) return true;
-        if (RemoteKeys.handle(this, event, appKeys.get(event.getKeyCode()),
-                holdAppKeys.get(event.getKeyCode()))) return true;
+        if (keys.handleScancode(this, event)) return true;
+        if (keys.handleKeycode(this, event)) return true;
         if (!isInputKey(event.getKeyCode())) return false;
         if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
             try {
@@ -88,7 +76,7 @@ public class InputKeyService extends AccessibilityService {
     @Override
     public void onDestroy() {
         if (gamepads != null) gamepads.stop();
-        if (consumeVolumeKeys) VolumeKeys.stop();
+        if (keys.consumesVolumeKeys()) VolumeKeys.stop();
         super.onDestroy();
     }
 

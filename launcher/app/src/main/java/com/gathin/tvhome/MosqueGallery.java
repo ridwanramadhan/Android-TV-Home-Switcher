@@ -185,6 +185,9 @@ final class MosqueGallery {
         next.setImageBitmap(decoded.bitmap);
         next.setAlpha(0f);
         next.setVisibility(View.VISIBLE);
+        // Schedule from the start of this transition: the fade itself must not make each photo
+        // arrive 1.85 s later than the spec's 60 s cadence.
+        scheduleNext(requestGeneration);
         caption.animate().alpha(0f).setDuration(CAPTION_FADE_MS).withEndAction(() -> {
             if (!isCurrent(requestGeneration)) return;
             setCaption(incomingPhoto);
@@ -198,7 +201,6 @@ final class MosqueGallery {
                 next.setVisibility(View.GONE);
                 next.setAlpha(0f);
                 shownPhoto = incomingPhoto;
-                scheduleNext(requestGeneration);
             }).start();
         }).start();
     }
@@ -211,7 +213,7 @@ final class MosqueGallery {
     private void setCaption(MosquePhoto photo) {
         name.setText(photo.mosque);
         location.setText(photo.location);
-        credit.setText("Photo: " + photo.creator + " · " + photo.license + " · Wikimedia Commons");
+        credit.setText(resources.getString(R.string.mosque_photo_credit, photo.creator, photo.license));
     }
 
     private void clearImages() {

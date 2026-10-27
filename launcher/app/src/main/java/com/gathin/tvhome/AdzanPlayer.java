@@ -1,9 +1,12 @@
 package com.gathin.tvhome;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.SurfaceTexture;
 import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
@@ -12,7 +15,6 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Surface;
 import android.view.TextureView;
-import android.view.View;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -33,6 +35,9 @@ public final class AdzanPlayer {
 
     private MediaPlayer mediaPlayer;
     private Surface videoSurface;
+    private AudioManager audioManager;
+    private AudioFocusRequest audioFocusRequest;
+    private boolean audioFocusHeld;
     private boolean isShowing;
     /** The last prayer this player announced, as a date + name key, so a minute-long tick fires once. */
     private String lastPlayedKey = "";
@@ -139,11 +144,9 @@ public final class AdzanPlayer {
             mediaPlayer = new MediaPlayer();
             mediaPlayer.setSurface(videoSurface);
 
-            AudioAttributes attrs = new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build();
+            AudioAttributes attrs = adhanAudioAttributes();
             mediaPlayer.setAudioAttributes(attrs);
+            requestAudioFocus(attrs);
 
             int videoRes = PrayerTimes.videoResource(currentPrayer);
             AssetFileDescriptor afd = null;
@@ -236,18 +239,49 @@ public final class AdzanPlayer {
         releasePlayer();
         overlay.hide();
 
-        // Give the focus back to the grid so the remote keeps working after the call.
-        View grid = activity.findViewById(R.id.grid);
-        if (grid != null) {
-            grid.requestFocus();
-        }
-
         notifyStateChanged();
         Log.i(TAG, "Adzan dismissed and returned to launcher");
     }
 
     private void notifyStateChanged() {
         if (onStateChangeListener != null) onStateChangeListener.run();
+    }
+
+    private static AudioAttributes adhanAudioAttributes() {
+        return new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build();
+    }
+
+    /** Takes the transient focus the call needs, so the app underneath pauses instead of playing over it. */
+    private void requestAudioFocus(AudioAttributes attributes) {
+        if (audioFocusHeld) return;
+        AudioManager manager = (AudioManager) activity.getSystemService(Context.AUDIO_SERVICE);
+        if (manager == null) return;
+        AudioFocusRequest request = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                .setAudioAttributes(attributes)
+                .setOnAudioFocusChangeListener(change -> {
+                    if (change == AudioManager.AUDIOFOCUS_LOSS) {
+                        dismiss();
+                    } else if (change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+                        pause();
+                    }
+                })
+                .build();
+        audioManager = manager;
+        audioFocusRequest = request;
+        audioFocusHeld = manager.requestAudioFocus(request) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        if (!audioFocusHeld) Log.w(TAG, "Audio focus not granted; playing the adhan anyway");
+    }
+
+    private void abandonAudioFocus() {
+        if (audioManager != null && audioFocusRequest != null) {
+            audioManager.abandonAudioFocusRequest(audioFocusRequest);
+        }
+        audioFocusHeld = false;
+        audioManager = null;
+        audioFocusRequest = null;
     }
 
     private void releasePlayer() {
@@ -263,6 +297,7 @@ public final class AdzanPlayer {
             }
             mediaPlayer = null;
         }
+        abandonAudioFocus();
         if (videoSurface != null) {
             try {
                 videoSurface.release();

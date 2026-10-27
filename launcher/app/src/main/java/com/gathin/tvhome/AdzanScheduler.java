@@ -40,13 +40,20 @@ public final class AdzanScheduler {
         List<DashboardSnapshot.Prayer> prayers = DashboardRepository.getCachedPrayers(appCtx);
         if (prayers == null || prayers.isEmpty()) {
             // Nothing cached yet (a cold boot): fetch once, which calls back into this method when it lands.
+            // The repository owns a worker thread, so close it in every path: nothing else references it.
+            DashboardRepository repository = new DashboardRepository(appCtx);
             try {
-                new DashboardRepository(appCtx).load(snap -> {
-                    if (snap != null && snap.prayers != null && !snap.prayers.isEmpty()) {
-                        scheduleNextPrayer(appCtx);
+                repository.load(snap -> {
+                    try {
+                        if (snap != null && snap.prayers != null && !snap.prayers.isEmpty()) {
+                            scheduleNextPrayer(appCtx);
+                        }
+                    } finally {
+                        repository.close();
                     }
                 });
             } catch (Exception e) {
+                repository.close();
                 Log.w(TAG, "Failed to load dashboard repository for scheduler", e);
             }
             return;

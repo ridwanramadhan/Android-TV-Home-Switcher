@@ -249,9 +249,9 @@ final class ClockScene {
             content.setX(baseX + driftX);
             content.setY(baseY + driftY);
             dashboard.setTranslationX(driftX * 0.4f);
-            // DashboardView draws its cards starting at 162/720 of its height. On 720p TVs the
-            // fixed-size clock and date can extend below that point, so move the cards below them.
-            float cardTop = dashboard.getHeight() * (162f / 720f);
+            // DashboardView draws its cards starting at 162/720 of its content box; ask it rather than
+            // repeating the baseline, so the letterboxing on non-16:9 panels stays aligned.
+            float cardTop = DashboardView.cardTopPx(dashboard.getWidth(), dashboard.getHeight());
             float clockBottom = content.getY() + content.getHeight();
             dashboard.setTranslationY(Math.max(0f, clockBottom + 12f * density - cardTop));
             if (parent.getWidth() > 0 && parent.getHeight() > 0) {

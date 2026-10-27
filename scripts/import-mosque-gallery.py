@@ -19,8 +19,8 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCES = ROOT / "docs/mosque-gallery-sources.json"
-DRAWABLES = ROOT / "launcher/app/src/main/res/drawable-nodpi"
-JAVA = ROOT / "launcher/app/src/main/java/com/gathin/tvhome/MosquePhotos.java"
+DRAWABLES = ROOT / "launcher/app/src/widgets/res/drawable-nodpi"
+JAVA = ROOT / "launcher/app/src/widgets/java/com/gathin/tvhome/MosquePhotos.java"
 NOTICES = ROOT / "THIRD_PARTY_NOTICES.md"
 USER_AGENT = "AquaTVHome/2.7 mosque-gallery-import"
 ALLOWED_LICENSES = {

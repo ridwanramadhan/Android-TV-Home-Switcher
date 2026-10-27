@@ -20,9 +20,7 @@ import android.view.ViewConfiguration;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.Toast;
 
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -46,13 +44,8 @@ public class HomeKeyService extends AccessibilityService {
     private int[] settingsScancodes = new int[0];
     private int[] settingsKeycodes = new int[0];
     private boolean settingsPanel;
-    /** consume_volume_keys: Volume Up/Down go to VolumeKeys instead of on to the firmware. */
-    private boolean consumeVolumeKeys;
-    /** app_keys, the same maps InputKeyService reads, for setups that run only this service. */
-    private Map<Integer, String> appKeys = Collections.emptyMap();
-    private Map<Integer, String> appScancodes = Collections.emptyMap();
-    private Map<Integer, String> holdAppKeys = Collections.emptyMap();
-    private Map<Integer, String> holdAppScancodes = Collections.emptyMap();
+    /** app_keys and consume_volume_keys, shared with InputKeyService. */
+    private KeyBindings keys = KeyBindings.empty();
 
     /** Waits for the user to unlock when Android binds this service at boot; null once the config is read. */
     private BroadcastReceiver unlockReceiver;
@@ -98,7 +91,7 @@ public class HomeKeyService extends AccessibilityService {
     public void onDestroy() {
         stopWaitingForUnlock();
         if (gamepads != null) gamepads.stop();
-        if (consumeVolumeKeys) VolumeKeys.stop();
+        if (keys.consumesVolumeKeys()) VolumeKeys.stop();
         super.onDestroy();
     }
 
@@ -111,9 +104,7 @@ public class HomeKeyService extends AccessibilityService {
         if (repairRecord) ServiceRepair.connected(this, getClass());
         settingsKeycodes = config.settingsKeycodes;
         settingsPanel = config.settingsKeyPanel;
-        consumeVolumeKeys = config.consumeVolumeKeys;
-        appKeys = RemoteKeys.parseAppKeys(config.appKeys);
-        appScancodes = RemoteKeys.parseAppScancodes(config.appKeys);
+        keys = KeyBindings.from(config);
         RemoteKeys.applyKeyFilter(this, config.keyFilter);
         stockHome.clear();
         if (!config.stockHomeRedirect.isEmpty()) {
@@ -129,8 +120,6 @@ public class HomeKeyService extends AccessibilityService {
             setServiceInfo(info);
         }
         if (!stockHome.isEmpty()) probeAtBoot();
-        holdAppKeys = RemoteKeys.parseHoldAppKeys(config.appKeys);
-        holdAppScancodes = RemoteKeys.parseHoldAppScancodes(config.appKeys);
         // gamepad_passthrough, off by default. Only with key_filter on: off, the service never filters keys.
         if (config.gamepadPassthrough && config.keyFilter && gamepads == null) {
             gamepads = new GamepadPassthrough(this);
@@ -147,10 +136,9 @@ public class HomeKeyService extends AccessibilityService {
 
     @Override
     protected boolean onKeyEvent(KeyEvent event) {
-        if (consumeVolumeKeys && VolumeKeys.handle(this, event)) return true;
+        if (keys.handleVolume(this, event)) return true;
         // A scancode entry is more specific than any keycode, so it goes first.
-        if (RemoteKeys.handle(this, event, appScancodes.get(event.getScanCode()),
-                holdAppScancodes.get(event.getScanCode()))) return true;
+        if (keys.handleScancode(this, event)) return true;
         // The stock launcher handled the remote's Settings button; with it disabled the button does nothing.
         if (isSettingsKey(event)) {
             if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
@@ -164,8 +152,7 @@ public class HomeKeyService extends AccessibilityService {
             }
             return true;
         }
-        if (RemoteKeys.handle(this, event, appKeys.get(event.getKeyCode()),
-                holdAppKeys.get(event.getKeyCode()))) return true;
+        if (keys.handleKeycode(this, event)) return true;
         if (event.getKeyCode() == KeyEvent.KEYCODE_HOME && !stockHome.isEmpty()) {
             redirectHomeKey(event);
             return false;

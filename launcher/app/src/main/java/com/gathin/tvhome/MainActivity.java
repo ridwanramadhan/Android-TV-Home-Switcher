@@ -46,7 +46,6 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
-import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -622,17 +621,20 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             // Keep the hero below the header when the library is enabled on a short screen,
             // even when the theme requests an extra visible row below the dock.
             int shelfClearance = cfg.appLibrary ? hero.getMeasuredHeight() + (int) (40 * density) : 0;
-            int want = Math.max(shelfClearance, h - dockRow - gridRows - (int) (AppAdapter.BOTTOM_ROOM_DP * density));
+            int desiredTopPadding = Math.max(shelfClearance,
+                    h - dockRow - gridRows - (int) (AppAdapter.BOTTOM_ROOM_DP * density));
             // Where the rows cannot fit even at the smallest tile (3 rows with the title on), the title keeps its
             // room above the dock and the last rows run off the bottom instead of the title drawing over the clock.
-            if (MainActivity.this.dockRow && cfg.dockTitle && rowsBelowDock > 0) want = Math.max(want, (int) (AppAdapter.TITLE_ROOM_DP * density));
+            if (MainActivity.this.dockRow && cfg.dockTitle && rowsBelowDock > 0) {
+                desiredTopPadding = Math.max(desiredTopPadding, (int) (AppAdapter.TITLE_ROOM_DP * density));
+            }
             // No dock to push down: the grid starts at the top, with room for the first row's zoom and glass.
-            if (!MainActivity.this.dockRow) want = (int) (AppAdapter.TOP_ROOM_DP * density);
+            if (!MainActivity.this.dockRow) desiredTopPadding = (int) (AppAdapter.TOP_ROOM_DP * density);
             // A single row never shows the names under its tiles (the title above the row names the app), so the
             // 7dp gap and 22dp label item_app.xml keeps for them would only lift the row: sit it that much lower.
-            if (singleRow && !cfg.alwaysShowNames) want += (int) (29 * density);
-            if (grid.getPaddingTop() != want) {
-                grid.setPadding(grid.getPaddingLeft(), want, grid.getPaddingRight(), grid.getPaddingBottom());
+            if (singleRow && !cfg.alwaysShowNames) desiredTopPadding += (int) (29 * density);
+            if (grid.getPaddingTop() != desiredTopPadding) {
+                grid.setPadding(grid.getPaddingLeft(), desiredTopPadding, grid.getPaddingRight(), grid.getPaddingBottom());
                 // A vertical grid parks the dock on the new padding line by scrolling (onTileFocused); a sideways
                 // row cannot scroll vertically, and the layout request made from inside this layout pass is
                 // dropped, so lay the row out again on the next frame. The glass and the title were placed for the
@@ -857,9 +859,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private void applyViewInputsHandler(boolean on) {
         ComponentName handler = new ComponentName(this, InputsRequestActivity.class);
         PackageManager pm = getPackageManager();
-        int want = on ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
-        if (pm.getComponentEnabledSetting(handler) != want) {
-            pm.setComponentEnabledSetting(handler, want, PackageManager.DONT_KILL_APP);
+        int desiredState = on
+                ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                : PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
+        if (pm.getComponentEnabledSetting(handler) != desiredState) {
+            pm.setComponentEnabledSetting(handler, desiredState, PackageManager.DONT_KILL_APP);
         }
     }
 
@@ -1077,7 +1081,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             heroArt.animate().cancel();
             heroArt.setAlpha(0f);
         }
-        if (rebuild) reloadTiles();
+        if (rebuild) {
+            adapter.invalidateArtwork();
+            reloadTiles();
+        }
         if (animate && entrance && animations && !reducedMotion) {
             grid.scheduleLayoutAnimation();
             // A rebuild redraws the grid anyway; without one the entrance needs a draw to start.
@@ -2077,9 +2084,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private void startStats() {
         if (statsThread != null) return;
         stats.setVisibility(View.VISIBLE);
-        cpuTotalPrev = -1;
-        idlePrev = -1;
-        procStatDead = false;
+        cpuLoad.reset();
         statsThread = new HandlerThread("stats");
         statsThread.start();
         // Each start gets its own handler, held by its task: stopStats on the main thread can clear the field
@@ -2138,85 +2143,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         return StatsText.forLocale(line.toString(), getResources().getConfiguration().getLocales().get(0));
     }
 
-    // -1: need another sample. -2: this source cannot be read (Android 9 hides /proc/stat from apps).
-    private static final int CPU_UNREADABLE = -2;
-    private long cpuTotalPrev = -1, cpuIdlePrev = -1;
-    private boolean procStatDead;
-    private long idlePrev = -1, wallPrev = -1;
+    private final CpuLoad cpuLoad = new CpuLoad();
 
     private int cpuPercent() {
-        if (!procStatDead) {
-            int fromStat = cpuFromProcStat();
-            if (fromStat != CPU_UNREADABLE) return fromStat;
-            procStatDead = true;
-            idlePrev = -1;
-        }
-        return cpuFromIdle();
-    }
-
-    private int cpuFromProcStat() {
-        String s = readFirstLine("/proc/stat");
-        if (s == null || !s.startsWith("cpu")) return CPU_UNREADABLE;
-        String[] t = s.trim().split("\\s+");
-        if (t.length < 5) return CPU_UNREADABLE;
-        try {
-            long user = Long.parseLong(t[1]), nice = Long.parseLong(t[2]), sys = Long.parseLong(t[3]);
-            long idle = Long.parseLong(t[4]);
-            long iowait = t.length > 5 ? Long.parseLong(t[5]) : 0;
-            long irq = t.length > 6 ? Long.parseLong(t[6]) : 0;
-            long soft = t.length > 7 ? Long.parseLong(t[7]) : 0;
-            long total = user + nice + sys + idle + iowait + irq + soft;
-            long idleAll = idle + iowait;
-            if (cpuTotalPrev < 0) {
-                cpuTotalPrev = total;
-                cpuIdlePrev = idleAll;
-                return -1;
-            }
-            long dt = total - cpuTotalPrev, di = idleAll - cpuIdlePrev;
-            cpuTotalPrev = total;
-            cpuIdlePrev = idleAll;
-            if (dt <= 0) return -1;
-            int busy = (int) Math.round((dt - di) * 100.0 / dt);
-            return Math.max(0, Math.min(100, busy));
-        } catch (NumberFormatException e) {
-            return CPU_UNREADABLE;
-        }
-    }
-
-    /** Busy percent from cpuidle time (microseconds) across the cores. -1 until the second sample. */
-    private int cpuFromIdle() {
-        long idle = 0;
-        int cores = 0;
-        for (int i = 0; i < 8; i++) {
-            boolean any = false;
-            for (int state = 0; state < 8; state++) {
-                String t = readFirstLine("/sys/devices/system/cpu/cpu" + i
-                        + "/cpuidle/state" + state + "/time");
-                if (t == null) break;
-                try {
-                    idle += Long.parseLong(t.trim());
-                    any = true;
-                } catch (NumberFormatException e) {
-                    break;
-                }
-            }
-            if (!any) break;
-            cores++;
-        }
-        if (cores == 0) return -1;
-        long wall = SystemClock.elapsedRealtime() * 1000L;
-        if (idlePrev < 0) {
-            idlePrev = idle;
-            wallPrev = wall;
-            return -1;
-        }
-        long di = idle - idlePrev;
-        long dw = (wall - wallPrev) * cores;
-        idlePrev = idle;
-        wallPrev = wall;
-        if (dw <= 0) return -1;
-        int busy = (int) Math.round((dw - di) * 100.0 / dw);
-        return Math.max(0, Math.min(100, busy));
+        return cpuLoad.percent();
     }
 
     /** RAM usage as {used, total} in MB, used = MemTotal - MemAvailable, e.g. "945 / 1536 MB". Used over
@@ -2239,14 +2169,6 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         if (available < 0 || total <= 0) return null;
         return new long[]{Math.max(0, total - available), total};
-    }
-
-    private static String readFirstLine(String path) {
-        try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.FileReader(path))) {
-            return r.readLine();
-        } catch (IOException e) {
-            return null;
-        }
     }
 
     private static String formatGb(Resources res, long bytes) {
@@ -2472,32 +2394,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     private void updateGreeting() {
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        int res;
-        // Locale-specific day parts (app language on Android 13+).
-        // Indonesian: Pagi 00-10, Siang 10-15, Sore 15-18, Malam 18-24.
-        // Spain (es-ES) and Catalan: "Buenas tardes" into the evening; "Buenas noches" from 21.
-        // Latin American Spanish (es-MX, es-AR, …) keeps the default hours: evening strings are also
-        // «Buenas noches», and there «Buenas noches» from ~17 matches local use better than Spain's 21.
+        // Locale-specific day parts (app language on Android 13+); see Greeting.
         Locale locale = getResources().getConfiguration().getLocales().get(0);
-        String lang = locale.getLanguage();
-        String country = locale.getCountry();
-        if ("in".equals(lang) || "id".equals(lang)) {
-            if (hour < 10) res = R.string.good_morning;
-            else if (hour < 15) res = R.string.good_afternoon;
-            else if (hour < 18) res = R.string.good_evening;
-            else res = R.string.good_night;
-        } else if (("es".equals(lang) && "ES".equals(country)) || "ca".equals(lang)) {
-            if (hour < 6) res = R.string.good_night;
-            else if (hour < 12) res = R.string.good_morning;
-            else if (hour < 21) res = R.string.good_afternoon;
-            else res = R.string.good_night;
-        } else {
-            if (hour < 5) res = R.string.good_night;
-            else if (hour < 12) res = R.string.good_morning;
-            else if (hour < 17) res = R.string.good_afternoon;
-            else if (hour < 22) res = R.string.good_evening;
-            else res = R.string.good_night;
-        }
+        int res = Greeting.resourceFor(locale, hour);
         String festiveGreeting = festive ? festival.greetingText(getResources()) : "";
         if (!festiveGreeting.isEmpty()) {
             greeting.setText(festiveGreeting);

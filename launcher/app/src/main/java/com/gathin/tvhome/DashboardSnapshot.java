@@ -51,14 +51,18 @@ final class DashboardSnapshot {
         this.weather = weather; this.air = air;
     }
 
-    static String aqiCategory(int value) {
-        if (value < 0) return "Unavailable";
-        if (value <= 50) return "Good";
-        if (value <= 100) return "Moderate";
-        if (value <= 150) return "Sensitive groups";
-        if (value <= 200) return "Unhealthy";
-        if (value <= 300) return "Very unhealthy";
-        return "Hazardous";
+    enum AqiCategory {
+        UNAVAILABLE, GOOD, MODERATE, SENSITIVE_GROUPS, UNHEALTHY, VERY_UNHEALTHY, HAZARDOUS
+    }
+
+    static AqiCategory aqiCategory(int value) {
+        if (value < 0) return AqiCategory.UNAVAILABLE;
+        if (value <= 50) return AqiCategory.GOOD;
+        if (value <= 100) return AqiCategory.MODERATE;
+        if (value <= 150) return AqiCategory.SENSITIVE_GROUPS;
+        if (value <= 200) return AqiCategory.UNHEALTHY;
+        if (value <= 300) return AqiCategory.VERY_UNHEALTHY;
+        return AqiCategory.HAZARDOUS;
     }
 
     /** The countdown card's "next prayer": which one and how many minutes away; see PrayerTimes.next. */

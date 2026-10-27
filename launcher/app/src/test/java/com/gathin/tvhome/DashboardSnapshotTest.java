@@ -19,8 +19,9 @@ public class DashboardSnapshotTest {
     }
 
     @Test public void classifiesUsAqi() {
-        assertEquals("Good", DashboardSnapshot.aqiCategory(50));
-        assertEquals("Moderate", DashboardSnapshot.aqiCategory(68));
-        assertEquals("Sensitive groups", DashboardSnapshot.aqiCategory(101));
+        assertEquals(DashboardSnapshot.AqiCategory.GOOD, DashboardSnapshot.aqiCategory(50));
+        assertEquals(DashboardSnapshot.AqiCategory.MODERATE, DashboardSnapshot.aqiCategory(68));
+        assertEquals(DashboardSnapshot.AqiCategory.SENSITIVE_GROUPS, DashboardSnapshot.aqiCategory(101));
+        assertEquals(DashboardSnapshot.AqiCategory.UNAVAILABLE, DashboardSnapshot.aqiCategory(-1));
     }
 }
